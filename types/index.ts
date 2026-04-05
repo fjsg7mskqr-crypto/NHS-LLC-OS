@@ -93,21 +93,6 @@ export interface CalendarBlock {
   property?: Property
 }
 
-export interface SquareInvoice {
-  id: string
-  square_id?: string
-  client_id?: string
-  job_id?: string
-  status: InvoiceStatus
-  amount_due: number
-  total_amount?: number
-  amount_paid: number
-  due_date?: string
-  created_at: string
-  synced_at: string
-  client?: Client
-  job?: Job
-}
 
 export interface Invoice {
   id: string
@@ -123,6 +108,7 @@ export interface Invoice {
   total: number
   created_at: string
   updated_at: string
+  deleted_at?: string
   client?: Client
   line_items?: InvoiceLineItem[]
 }

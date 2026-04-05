@@ -3,11 +3,11 @@
 import { useEffect, useState } from 'react'
 import { ArrowLeft, MapPin, Clock, DollarSign, CheckCircle, ExternalLink } from 'lucide-react'
 import { formatCurrency, formatHours, formatMinutes, statusColor, CATEGORY_COLORS, CATEGORY_LABELS } from '@/lib/utils'
-import type { Job, CategoryType, SquareInvoice, TimeEntry } from '@/types'
+import type { Job, CategoryType, Invoice, TimeEntry } from '@/types'
 
 export default function JobDetail({ job, onBack }: { job: Job; onBack: () => void }) {
   const [entries, setEntries] = useState<TimeEntry[]>([])
-  const [invoice, setInvoice] = useState<SquareInvoice | null>(null)
+  const [invoice, setInvoice] = useState<Invoice | null>(null)
 
   useEffect(() => {
     fetch(`/api/time-entries?job_id=${job.id}`)
@@ -16,8 +16,8 @@ export default function JobDetail({ job, onBack }: { job: Job; onBack: () => voi
       })
       .catch(() => {})
     if (job.square_invoice_id) {
-      fetch('/api/square-invoices').then(r => r.json()).then((invs: SquareInvoice[]) => {
-        setInvoice((invs || []).find(i => i.square_id === job.square_invoice_id) || null)
+      fetch('/api/invoices').then(r => r.json()).then((invs: Invoice[]) => {
+        setInvoice((invs || []).find(i => i.square_invoice_id === job.square_invoice_id) || null)
       }).catch(() => {})
     }
   }, [job.id, job.square_invoice_id])
@@ -30,9 +30,9 @@ export default function JobDetail({ job, onBack }: { job: Job; onBack: () => voi
   const client = job.client
   const property = job.property
 
-  const invoiceStatusColor: Record<string, string> = {
+  const invStatusColor: Record<string, string> = {
     paid: 'text-emerald-400 bg-emerald-500/15 border-emerald-500/30',
-    unpaid: 'text-amber-400 bg-amber-500/15 border-amber-500/30',
+    sent: 'text-blue-400 bg-blue-500/15 border-blue-500/30',
     overdue: 'text-red-400 bg-red-500/15 border-red-500/30',
     draft: 'text-slate-400 bg-slate-500/15 border-slate-500/30',
   }
@@ -82,13 +82,13 @@ export default function JobDetail({ job, onBack }: { job: Job; onBack: () => voi
       </div>
       {invoice && (
         <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-5">
-          <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2"><ExternalLink className="w-4 h-4 text-slate-400" />Linked Square Invoice</h3>
+          <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2"><ExternalLink className="w-4 h-4 text-slate-400" />Linked Invoice</h3>
           <div className="flex flex-wrap items-center gap-6">
-            <div><p className="text-xs text-slate-500">Invoice ID</p><p className="text-sm font-mono text-slate-300">{invoice.square_id}</p></div>
-            <div><p className="text-xs text-slate-500">Total</p><p className="text-sm font-medium text-white">{formatCurrency(invoice.total_amount || 0)}</p></div>
-            <div><p className="text-xs text-slate-500">Paid</p><p className="text-sm font-medium text-emerald-400">{formatCurrency(invoice.amount_paid)}</p></div>
+            <div><p className="text-xs text-slate-500">Invoice #</p><p className="text-sm font-mono text-slate-300">{invoice.invoice_number}</p></div>
+            <div><p className="text-xs text-slate-500">Total</p><p className="text-sm font-medium text-white">{formatCurrency(invoice.total)}</p></div>
+            {invoice.square_invoice_id && <div><p className="text-xs text-slate-500">Square ID</p><p className="text-sm font-mono text-slate-400">{invoice.square_invoice_id}</p></div>}
             <div><p className="text-xs text-slate-500">Due</p><p className="text-sm text-slate-300">{invoice.due_date || '—'}</p></div>
-            <div><p className="text-xs text-slate-500">Status</p><span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${invoiceStatusColor[invoice.status] || ''}`}>{invoice.status}</span></div>
+            <div><p className="text-xs text-slate-500">Status</p><span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${invStatusColor[invoice.status] || ''}`}>{invoice.status}</span></div>
           </div>
         </div>
       )}

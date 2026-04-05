@@ -5,6 +5,7 @@ import { Plus } from 'lucide-react'
 import InvoicesList from './InvoicesList'
 import InvoiceDetail from './InvoiceDetail'
 import CreateInvoiceModal from './CreateInvoiceModal'
+import ErrorBanner from '@/components/ui/ErrorBanner'
 import { formatCurrency } from '@/lib/utils'
 import type { Invoice } from '@/types'
 
@@ -14,13 +15,18 @@ export default function InvoicesTab() {
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [listKey, setListKey] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     setLoading(true)
+    setError(null)
     fetch('/api/invoices')
-      .then(r => r.json())
+      .then(r => {
+        if (!r.ok) throw new Error('Failed to load invoices')
+        return r.json()
+      })
       .then((data: Invoice[]) => setInvoices(data || []))
-      .catch(() => {})
+      .catch(e => setError(e.message))
       .finally(() => setLoading(false))
   }, [listKey])
 
@@ -67,6 +73,8 @@ export default function InvoicesTab() {
           <Plus className="w-4 h-4" /> New Invoice
         </button>
       </div>
+
+      {error && <ErrorBanner message={error} onDismiss={() => setError(null)} />}
 
       {/* Summary Metrics */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 stagger-grid">

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { ArrowLeft, Send, CheckCircle, ExternalLink, Trash2, Pencil, Plus, X } from 'lucide-react'
 import { formatCurrency, formatDate, invoiceStatusColor } from '@/lib/utils'
+import ErrorBanner from '@/components/ui/ErrorBanner'
 import type { Invoice, Client, InvoiceStatus } from '@/types'
 
 interface LineItemEdit {
@@ -23,6 +24,7 @@ export default function InvoiceDetail({
   const [updating, setUpdating] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [editing, setEditing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   // Edit form state
   const [clients, setClients] = useState<Client[]>([])
@@ -52,23 +54,27 @@ export default function InvoiceDetail({
 
   const handleDelete = async () => {
     setUpdating(true)
+    setError(null)
     try {
       const res = await fetch(`/api/invoices?id=${invoice.id}`, { method: 'DELETE' })
-      if (res.ok) onUpdated()
-    } catch {}
+      if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || 'Delete failed') }
+      onUpdated()
+    } catch (e) { setError(e instanceof Error ? e.message : 'Delete failed') }
     setUpdating(false)
   }
 
   const markStatus = async (status: 'sent' | 'paid') => {
     setUpdating(true)
+    setError(null)
     try {
       const res = await fetch('/api/invoices', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: invoice.id, status }),
       })
-      if (res.ok) onUpdated()
-    } catch {}
+      if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || 'Update failed') }
+      onUpdated()
+    } catch (e) { setError(e instanceof Error ? e.message : 'Update failed') }
     setUpdating(false)
   }
 
@@ -89,6 +95,7 @@ export default function InvoiceDetail({
 
   const handleSaveEdit = async () => {
     setUpdating(true)
+    setError(null)
     try {
       const res = await fetch('/api/invoices', {
         method: 'PATCH',
@@ -106,8 +113,9 @@ export default function InvoiceDetail({
           line_items: computedLines.filter(li => li.description.trim()),
         }),
       })
-      if (res.ok) onUpdated()
-    } catch {}
+      if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || 'Save failed') }
+      onUpdated()
+    } catch (e) { setError(e instanceof Error ? e.message : 'Save failed') }
     setUpdating(false)
   }
 
@@ -122,6 +130,8 @@ export default function InvoiceDetail({
           </button>
           <h2 className="text-xl font-bold text-white">Edit Invoice</h2>
         </div>
+
+        {error && <ErrorBanner message={error} onDismiss={() => setError(null)} />}
 
         <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-5 space-y-4">
           <div className="grid grid-cols-2 gap-3">
@@ -285,6 +295,8 @@ export default function InvoiceDetail({
           </div>
         </div>
       </div>
+
+      {error && <ErrorBanner message={error} onDismiss={() => setError(null)} />}
 
       {/* Invoice info cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 stagger-grid">

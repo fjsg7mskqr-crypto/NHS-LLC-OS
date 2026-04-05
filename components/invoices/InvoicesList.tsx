@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Search, ChevronDown, ArrowUpRight, FileText } from 'lucide-react'
+import { Search, ChevronDown, ArrowUpRight, FileText, AlertTriangle } from 'lucide-react'
 import { formatCurrency, formatDate, invoiceStatusColor } from '@/lib/utils'
 import type { Client, Invoice, InvoiceStatus } from '@/types'
 
@@ -17,15 +17,16 @@ export default function InvoicesList({ onSelect }: { onSelect: (id: string) => v
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [clients, setClients] = useState<Client[]>([])
   const [loading, setLoading] = useState(true)
+  const [fetchError, setFetchError] = useState(false)
 
   useEffect(() => {
     Promise.all([
-      fetch('/api/invoices').then(r => r.json()),
-      fetch('/api/clients').then(r => r.json()),
+      fetch('/api/invoices').then(r => { if (!r.ok) throw new Error(); return r.json() }),
+      fetch('/api/clients').then(r => { if (!r.ok) throw new Error(); return r.json() }),
     ]).then(([inv, cli]) => {
       setInvoices(inv || [])
       setClients(cli || [])
-    }).catch(() => {}).finally(() => setLoading(false))
+    }).catch(() => setFetchError(true)).finally(() => setLoading(false))
   }, [])
 
   const filtered = invoices
@@ -162,6 +163,12 @@ export default function InvoicesList({ onSelect }: { onSelect: (id: string) => v
         </table>
         {loading && (
           <div className="py-12 text-center text-slate-500 text-sm">Loading invoices...</div>
+        )}
+        {fetchError && (
+          <div className="py-12 text-center text-red-400 text-sm">
+            <AlertTriangle className="w-6 h-6 mx-auto mb-2" />
+            Failed to load invoices. Check your connection and refresh.
+          </div>
         )}
         {!loading && filtered.length === 0 && (
           <div className="py-12 text-center text-slate-500 text-sm">

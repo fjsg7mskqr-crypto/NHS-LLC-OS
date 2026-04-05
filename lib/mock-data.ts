@@ -1,5 +1,5 @@
 import type {
-  Client, Property, Job, TimeEntry, Task, CalendarBlock, SquareInvoice
+  Client, Property, Job, TimeEntry, Task, CalendarBlock
 } from '@/types'
 
 export const MOCK_CLIENTS: Client[] = [
@@ -97,14 +97,6 @@ export const MOCK_CALENDAR_BLOCKS: CalendarBlock[] = [
   { id: 'cb7', property_id: 'p1', start_date: '2026-04-09', end_date: '2026-04-09', type: 'job_day', notes: 'Miller irrigation timers' },
 ]
 
-export const MOCK_SQUARE_INVOICES: SquareInvoice[] = [
-  { id: 'si1', square_id: 'sq_inv_001', client_id: 'c4', job_id: 'j4', status: 'paid', amount_due: 320, amount_paid: 320, due_date: '2026-03-30', created_at: '2026-03-22T00:00:00Z', synced_at: '2026-03-30T12:00:00Z' },
-  { id: 'si2', square_id: 'sq_inv_002', client_id: 'c4', job_id: 'j8', status: 'paid', amount_due: 240, amount_paid: 240, due_date: '2026-03-20', created_at: '2026-03-12T00:00:00Z', synced_at: '2026-03-20T09:00:00Z' },
-  { id: 'si3', square_id: 'sq_inv_003', client_id: 'c2', job_id: 'j5', status: 'sent', amount_due: 337.50, amount_paid: 0, due_date: '2026-04-10', created_at: '2026-03-30T00:00:00Z', synced_at: '2026-03-30T16:00:00Z' },
-  { id: 'si4', square_id: 'sq_inv_004', client_id: 'c1', job_id: 'j1', status: 'sent', amount_due: 637.50, amount_paid: 0, due_date: '2026-04-14', created_at: '2026-04-03T00:00:00Z', synced_at: '2026-04-03T17:00:00Z' },
-  { id: 'si5', square_id: 'sq_inv_005', client_id: 'c3', job_id: 'j3', status: 'sent', amount_due: 998.75, amount_paid: 0, due_date: '2026-04-20', created_at: '2026-04-01T00:00:00Z', synced_at: '2026-04-01T18:00:00Z' },
-]
-
 // ─── Computed helpers ────────────────────────────────────────────
 
 export function getActiveJobs() {
@@ -131,12 +123,11 @@ export function getWeeklyStats() {
     return d.getFullYear() === 2026 && d.getMonth() === 3 && te.billable
   })
   const billableMTD = mtdEntries.reduce((sum, te) => sum + ((te.duration_minutes || 0) * (te.hourly_rate || 0) / 60), 0)
-  const squareUnpaid = MOCK_SQUARE_INVOICES.filter(inv => inv.status === 'sent' || inv.status === 'overdue').reduce((sum, inv) => sum + inv.amount_due, 0)
   return {
     activeJobs: MOCK_JOBS.filter(j => j.status === 'active').length,
     hoursThisWeek: Math.round(hoursThisWeek * 10) / 10,
     billableMTD,
-    squareUnpaid,
+    invoicesOutstanding: 0,
   }
 }
 
