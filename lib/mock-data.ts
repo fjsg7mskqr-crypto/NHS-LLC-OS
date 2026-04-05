@@ -47,33 +47,33 @@ export const MOCK_JOBS: Job[] = [
 
 export const MOCK_TIME_ENTRIES: TimeEntry[] = [
   // Mon Mar 30
-  { id: 'te1', job_id: 'j1', client_id: 'c1', category: 'drive_time', start_time: '2026-03-30T08:00:00Z', end_time: '2026-03-30T08:25:00Z', duration_minutes: 25, billable: false, rate: 0, notes: 'Drive to Miller Home', created_at: '2026-03-30T08:00:00Z' },
-  { id: 'te2', job_id: 'j1', client_id: 'c1', category: 'client_work', start_time: '2026-03-30T08:30:00Z', end_time: '2026-03-30T11:00:00Z', duration_minutes: 150, billable: true, rate: 85, notes: 'Aeration and overseeding', created_at: '2026-03-30T11:00:00Z' },
-  { id: 'te3', job_id: 'j5', client_id: 'c2', category: 'drive_time', start_time: '2026-03-30T11:30:00Z', end_time: '2026-03-30T12:15:00Z', duration_minutes: 45, billable: false, rate: 0, notes: 'Drive to Lakeside Den', created_at: '2026-03-30T12:15:00Z' },
-  { id: 'te4', job_id: 'j5', client_id: 'c2', category: 'client_work', start_time: '2026-03-30T12:30:00Z', end_time: '2026-03-30T14:00:00Z', duration_minutes: 90, billable: true, rate: 75, notes: 'Replaced 6 HVAC filters, checked thermostat', created_at: '2026-03-30T14:00:00Z' },
-  { id: 'te5', job_id: undefined, client_id: undefined, category: 'errand', start_time: '2026-03-30T14:30:00Z', end_time: '2026-03-30T15:15:00Z', duration_minutes: 45, billable: false, rate: 0, notes: 'Hardware store — deck screws and stain for j2', created_at: '2026-03-30T15:15:00Z' },
+  { id: 'te1', job_id: 'j1', client_id: 'c1', category: 'drive_time', start_time: '2026-03-30T08:00:00Z', end_time: '2026-03-30T08:25:00Z', duration_minutes: 25, billable: false, hourly_rate: 0, notes: 'Drive to Miller Home', created_at: '2026-03-30T08:00:00Z' },
+  { id: 'te2', job_id: 'j1', client_id: 'c1', category: 'client_work', start_time: '2026-03-30T08:30:00Z', end_time: '2026-03-30T11:00:00Z', duration_minutes: 150, billable: true, hourly_rate: 85, notes: 'Aeration and overseeding', created_at: '2026-03-30T11:00:00Z' },
+  { id: 'te3', job_id: 'j5', client_id: 'c2', category: 'drive_time', start_time: '2026-03-30T11:30:00Z', end_time: '2026-03-30T12:15:00Z', duration_minutes: 45, billable: false, hourly_rate: 0, notes: 'Drive to Lakeside Den', created_at: '2026-03-30T12:15:00Z' },
+  { id: 'te4', job_id: 'j5', client_id: 'c2', category: 'client_work', start_time: '2026-03-30T12:30:00Z', end_time: '2026-03-30T14:00:00Z', duration_minutes: 90, billable: true, hourly_rate: 75, notes: 'Replaced 6 HVAC filters, checked thermostat', created_at: '2026-03-30T14:00:00Z' },
+  { id: 'te5', job_id: undefined, client_id: undefined, category: 'errand', start_time: '2026-03-30T14:30:00Z', end_time: '2026-03-30T15:15:00Z', duration_minutes: 45, billable: false, hourly_rate: 0, notes: 'Hardware store — deck screws and stain for j2', created_at: '2026-03-30T15:15:00Z' },
   // Tue Mar 31
-  { id: 'te6', job_id: 'j2', client_id: 'c2', category: 'prep', start_time: '2026-03-31T07:30:00Z', end_time: '2026-03-31T08:00:00Z', duration_minutes: 30, billable: false, rate: 0, notes: 'Load truck with supplies', created_at: '2026-03-31T08:00:00Z' },
-  { id: 'te7', job_id: 'j2', client_id: 'c2', category: 'drive_time', start_time: '2026-03-31T08:00:00Z', end_time: '2026-03-31T08:45:00Z', duration_minutes: 45, billable: false, rate: 0, notes: 'Drive to Main Lodge', created_at: '2026-03-31T08:45:00Z' },
-  { id: 'te8', job_id: 'j2', client_id: 'c2', category: 'client_work', start_time: '2026-03-31T09:00:00Z', end_time: '2026-03-31T13:30:00Z', duration_minutes: 270, billable: true, rate: 75, notes: 'Pulled rotted boards, installed 40 new cedar planks', created_at: '2026-03-31T13:30:00Z' },
-  { id: 'te9', job_id: 'j2', client_id: 'c2', category: 'client_work', start_time: '2026-03-31T14:00:00Z', end_time: '2026-03-31T16:30:00Z', duration_minutes: 150, billable: true, rate: 75, notes: 'Sanded deck surface, first coat of stain', created_at: '2026-03-31T16:30:00Z' },
+  { id: 'te6', job_id: 'j2', client_id: 'c2', category: 'prep', start_time: '2026-03-31T07:30:00Z', end_time: '2026-03-31T08:00:00Z', duration_minutes: 30, billable: false, hourly_rate: 0, notes: 'Load truck with supplies', created_at: '2026-03-31T08:00:00Z' },
+  { id: 'te7', job_id: 'j2', client_id: 'c2', category: 'drive_time', start_time: '2026-03-31T08:00:00Z', end_time: '2026-03-31T08:45:00Z', duration_minutes: 45, billable: false, hourly_rate: 0, notes: 'Drive to Main Lodge', created_at: '2026-03-31T08:45:00Z' },
+  { id: 'te8', job_id: 'j2', client_id: 'c2', category: 'client_work', start_time: '2026-03-31T09:00:00Z', end_time: '2026-03-31T13:30:00Z', duration_minutes: 270, billable: true, hourly_rate: 75, notes: 'Pulled rotted boards, installed 40 new cedar planks', created_at: '2026-03-31T13:30:00Z' },
+  { id: 'te9', job_id: 'j2', client_id: 'c2', category: 'client_work', start_time: '2026-03-31T14:00:00Z', end_time: '2026-03-31T16:30:00Z', duration_minutes: 150, billable: true, hourly_rate: 75, notes: 'Sanded deck surface, first coat of stain', created_at: '2026-03-31T16:30:00Z' },
   // Wed Apr 1
-  { id: 'te10', job_id: 'j3', client_id: 'c3', category: 'drive_time', start_time: '2026-04-01T08:00:00Z', end_time: '2026-04-01T09:00:00Z', duration_minutes: 60, billable: false, rate: 0, notes: 'Drive to Mountain View', created_at: '2026-04-01T09:00:00Z' },
-  { id: 'te11', job_id: 'j3', client_id: 'c3', category: 'client_work', start_time: '2026-04-01T09:15:00Z', end_time: '2026-04-01T12:00:00Z', duration_minutes: 165, billable: true, rate: 95, notes: 'Water system startup — all zones good', created_at: '2026-04-01T12:00:00Z' },
-  { id: 'te12', job_id: 'j3', client_id: 'c3', category: 'client_work', start_time: '2026-04-01T12:30:00Z', end_time: '2026-04-01T14:00:00Z', duration_minutes: 90, billable: true, rate: 95, notes: 'HVAC filters, furnace inspection', created_at: '2026-04-01T14:00:00Z' },
-  { id: 'te13', job_id: undefined, client_id: undefined, category: 'admin', start_time: '2026-04-01T15:00:00Z', end_time: '2026-04-01T16:00:00Z', duration_minutes: 60, billable: false, rate: 0, notes: 'Invoice catch-up, Square reconciliation', created_at: '2026-04-01T16:00:00Z' },
+  { id: 'te10', job_id: 'j3', client_id: 'c3', category: 'drive_time', start_time: '2026-04-01T08:00:00Z', end_time: '2026-04-01T09:00:00Z', duration_minutes: 60, billable: false, hourly_rate: 0, notes: 'Drive to Mountain View', created_at: '2026-04-01T09:00:00Z' },
+  { id: 'te11', job_id: 'j3', client_id: 'c3', category: 'client_work', start_time: '2026-04-01T09:15:00Z', end_time: '2026-04-01T12:00:00Z', duration_minutes: 165, billable: true, hourly_rate: 95, notes: 'Water system startup — all zones good', created_at: '2026-04-01T12:00:00Z' },
+  { id: 'te12', job_id: 'j3', client_id: 'c3', category: 'client_work', start_time: '2026-04-01T12:30:00Z', end_time: '2026-04-01T14:00:00Z', duration_minutes: 90, billable: true, hourly_rate: 95, notes: 'HVAC filters, furnace inspection', created_at: '2026-04-01T14:00:00Z' },
+  { id: 'te13', job_id: undefined, client_id: undefined, category: 'admin', start_time: '2026-04-01T15:00:00Z', end_time: '2026-04-01T16:00:00Z', duration_minutes: 60, billable: false, hourly_rate: 0, notes: 'Invoice catch-up, Square reconciliation', created_at: '2026-04-01T16:00:00Z' },
   // Thu Apr 2
-  { id: 'te14', job_id: 'j6', client_id: 'c1', category: 'prep', start_time: '2026-04-02T07:45:00Z', end_time: '2026-04-02T08:15:00Z', duration_minutes: 30, billable: false, rate: 0, notes: 'Gather irrigation tools', created_at: '2026-04-02T08:15:00Z' },
-  { id: 'te15', job_id: 'j6', client_id: 'c1', category: 'drive_time', start_time: '2026-04-02T08:15:00Z', end_time: '2026-04-02T08:40:00Z', duration_minutes: 25, billable: false, rate: 0, notes: 'Drive to Miller Home', created_at: '2026-04-02T08:40:00Z' },
-  { id: 'te16', job_id: 'j6', client_id: 'c1', category: 'client_work', start_time: '2026-04-02T08:45:00Z', end_time: '2026-04-02T11:30:00Z', duration_minutes: 165, billable: true, rate: 85, notes: 'Pressurized all zones, fixed 2 broken heads in zone 4', created_at: '2026-04-02T11:30:00Z' },
-  { id: 'te17', job_id: 'j7', client_id: 'c3', category: 'drive_time', start_time: '2026-04-02T12:30:00Z', end_time: '2026-04-02T13:30:00Z', duration_minutes: 60, billable: false, rate: 0, notes: 'Drive to Mountain View', created_at: '2026-04-02T13:30:00Z' },
-  { id: 'te18', job_id: 'j7', client_id: 'c3', category: 'client_work', start_time: '2026-04-02T13:45:00Z', end_time: '2026-04-02T17:00:00Z', duration_minutes: 195, billable: true, rate: 95, notes: 'Pruning ornamental trees, bed edging', created_at: '2026-04-02T17:00:00Z' },
+  { id: 'te14', job_id: 'j6', client_id: 'c1', category: 'prep', start_time: '2026-04-02T07:45:00Z', end_time: '2026-04-02T08:15:00Z', duration_minutes: 30, billable: false, hourly_rate: 0, notes: 'Gather irrigation tools', created_at: '2026-04-02T08:15:00Z' },
+  { id: 'te15', job_id: 'j6', client_id: 'c1', category: 'drive_time', start_time: '2026-04-02T08:15:00Z', end_time: '2026-04-02T08:40:00Z', duration_minutes: 25, billable: false, hourly_rate: 0, notes: 'Drive to Miller Home', created_at: '2026-04-02T08:40:00Z' },
+  { id: 'te16', job_id: 'j6', client_id: 'c1', category: 'client_work', start_time: '2026-04-02T08:45:00Z', end_time: '2026-04-02T11:30:00Z', duration_minutes: 165, billable: true, hourly_rate: 85, notes: 'Pressurized all zones, fixed 2 broken heads in zone 4', created_at: '2026-04-02T11:30:00Z' },
+  { id: 'te17', job_id: 'j7', client_id: 'c3', category: 'drive_time', start_time: '2026-04-02T12:30:00Z', end_time: '2026-04-02T13:30:00Z', duration_minutes: 60, billable: false, hourly_rate: 0, notes: 'Drive to Mountain View', created_at: '2026-04-02T13:30:00Z' },
+  { id: 'te18', job_id: 'j7', client_id: 'c3', category: 'client_work', start_time: '2026-04-02T13:45:00Z', end_time: '2026-04-02T17:00:00Z', duration_minutes: 195, billable: true, hourly_rate: 95, notes: 'Pruning ornamental trees, bed edging', created_at: '2026-04-02T17:00:00Z' },
   // Fri Apr 3
-  { id: 'te19', job_id: 'j1', client_id: 'c1', category: 'drive_time', start_time: '2026-04-03T08:00:00Z', end_time: '2026-04-03T08:25:00Z', duration_minutes: 25, billable: false, rate: 0, notes: 'Drive to Miller', created_at: '2026-04-03T08:25:00Z' },
-  { id: 'te20', job_id: 'j1', client_id: 'c1', category: 'client_work', start_time: '2026-04-03T08:30:00Z', end_time: '2026-04-03T10:30:00Z', duration_minutes: 120, billable: true, rate: 85, notes: 'First mow of season, fertilizer application', created_at: '2026-04-03T10:30:00Z' },
-  { id: 'te21', job_id: 'j2', client_id: 'c2', category: 'drive_time', start_time: '2026-04-03T11:00:00Z', end_time: '2026-04-03T11:45:00Z', duration_minutes: 45, billable: false, rate: 0, notes: 'Drive to Lakeside Lodge', created_at: '2026-04-03T11:45:00Z' },
-  { id: 'te22', job_id: 'j2', client_id: 'c2', category: 'client_work', start_time: '2026-04-03T12:00:00Z', end_time: '2026-04-03T15:00:00Z', duration_minutes: 180, billable: true, rate: 75, notes: 'Second coat of deck stain, touch-up trim', created_at: '2026-04-03T15:00:00Z' },
-  { id: 'te23', job_id: undefined, client_id: undefined, category: 'admin', start_time: '2026-04-03T15:30:00Z', end_time: '2026-04-03T16:15:00Z', duration_minutes: 45, billable: false, rate: 0, notes: 'Weekly review, schedule next week', created_at: '2026-04-03T16:15:00Z' },
+  { id: 'te19', job_id: 'j1', client_id: 'c1', category: 'drive_time', start_time: '2026-04-03T08:00:00Z', end_time: '2026-04-03T08:25:00Z', duration_minutes: 25, billable: false, hourly_rate: 0, notes: 'Drive to Miller', created_at: '2026-04-03T08:25:00Z' },
+  { id: 'te20', job_id: 'j1', client_id: 'c1', category: 'client_work', start_time: '2026-04-03T08:30:00Z', end_time: '2026-04-03T10:30:00Z', duration_minutes: 120, billable: true, hourly_rate: 85, notes: 'First mow of season, fertilizer application', created_at: '2026-04-03T10:30:00Z' },
+  { id: 'te21', job_id: 'j2', client_id: 'c2', category: 'drive_time', start_time: '2026-04-03T11:00:00Z', end_time: '2026-04-03T11:45:00Z', duration_minutes: 45, billable: false, hourly_rate: 0, notes: 'Drive to Lakeside Lodge', created_at: '2026-04-03T11:45:00Z' },
+  { id: 'te22', job_id: 'j2', client_id: 'c2', category: 'client_work', start_time: '2026-04-03T12:00:00Z', end_time: '2026-04-03T15:00:00Z', duration_minutes: 180, billable: true, hourly_rate: 75, notes: 'Second coat of deck stain, touch-up trim', created_at: '2026-04-03T15:00:00Z' },
+  { id: 'te23', job_id: undefined, client_id: undefined, category: 'admin', start_time: '2026-04-03T15:30:00Z', end_time: '2026-04-03T16:15:00Z', duration_minutes: 45, billable: false, hourly_rate: 0, notes: 'Weekly review, schedule next week', created_at: '2026-04-03T16:15:00Z' },
 ]
 
 export const MOCK_TASKS: Task[] = [
@@ -113,7 +113,7 @@ export function getActiveJobs() {
     const property = MOCK_PROPERTIES.find(p => p.id === job.property_id)
     const entries = MOCK_TIME_ENTRIES.filter(te => te.job_id === job.id)
     const billableHours = entries.filter(te => te.billable).reduce((sum, te) => sum + (te.duration_minutes || 0), 0) / 60
-    const billedAmount = entries.filter(te => te.billable).reduce((sum, te) => sum + ((te.duration_minutes || 0) * (te.rate || 0) / 60), 0)
+    const billedAmount = entries.filter(te => te.billable).reduce((sum, te) => sum + ((te.duration_minutes || 0) * (te.hourly_rate || 0) / 60), 0)
     return { ...job, client, property, billableHours, billedAmount }
   })
 }
@@ -130,7 +130,7 @@ export function getWeeklyStats() {
     const d = new Date(te.start_time)
     return d.getFullYear() === 2026 && d.getMonth() === 3 && te.billable
   })
-  const billableMTD = mtdEntries.reduce((sum, te) => sum + ((te.duration_minutes || 0) * (te.rate || 0) / 60), 0)
+  const billableMTD = mtdEntries.reduce((sum, te) => sum + ((te.duration_minutes || 0) * (te.hourly_rate || 0) / 60), 0)
   const squareUnpaid = MOCK_SQUARE_INVOICES.filter(inv => inv.status === 'sent' || inv.status === 'overdue').reduce((sum, inv) => sum + inv.amount_due, 0)
   return {
     activeJobs: MOCK_JOBS.filter(j => j.status === 'active').length,
@@ -168,7 +168,7 @@ export function getJobProfitability() {
     const entries = MOCK_TIME_ENTRIES.filter(te => te.job_id === job.id)
     const billableMinutes = entries.filter(te => te.billable).reduce((sum, te) => sum + (te.duration_minutes || 0), 0)
     const totalMinutes = entries.reduce((sum, te) => sum + (te.duration_minutes || 0), 0)
-    const billedAmount = entries.filter(te => te.billable).reduce((sum, te) => sum + ((te.duration_minutes || 0) * (te.rate || 0) / 60), 0)
+    const billedAmount = entries.filter(te => te.billable).reduce((sum, te) => sum + ((te.duration_minutes || 0) * (te.hourly_rate || 0) / 60), 0)
     const billableHours = billableMinutes / 60
     const effectiveRate = billableHours > 0 ? billedAmount / billableHours : 0
     const targetRate = job.target_rate || client?.default_hourly_rate || 80
@@ -190,7 +190,7 @@ export function getClientProfitability() {
     const entries = MOCK_TIME_ENTRIES.filter(te => te.client_id === client.id)
     const billableMinutes = entries.filter(te => te.billable).reduce((sum, te) => sum + (te.duration_minutes || 0), 0)
     const totalMinutes = entries.reduce((sum, te) => sum + (te.duration_minutes || 0), 0)
-    const billed = entries.filter(te => te.billable).reduce((sum, te) => sum + ((te.duration_minutes || 0) * (te.rate || 0) / 60), 0)
+    const billed = entries.filter(te => te.billable).reduce((sum, te) => sum + ((te.duration_minutes || 0) * (te.hourly_rate || 0) / 60), 0)
     return {
       id: client.id, name: client.name,
       hours: Math.round(totalMinutes / 60 * 10) / 10,

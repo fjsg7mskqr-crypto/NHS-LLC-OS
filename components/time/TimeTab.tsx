@@ -7,6 +7,7 @@ import DailyTimeline from './DailyTimeline'
 import WeeklyChart from './WeeklyChart'
 import CategoryBreakdown from './CategoryBreakdown'
 import ProfitabilityTables from './ProfitabilityTables'
+import TimesheetExportPanel from './TimesheetExportPanel'
 import TimeEntryForm from './TimeEntryForm'
 
 function getWeekDates() {
@@ -50,6 +51,7 @@ export default function TimeTab() {
         <div className="lg:col-span-2"><WeeklyChart weekStart={weekStart} /></div>
         <div><CategoryBreakdown weekStart={weekStart} /></div>
       </div>
+      <TimesheetExportPanel />
       <ProfitabilityTables />
       {showForm && <TimeEntryForm onClose={() => setShowForm(false)} />}
     </div>

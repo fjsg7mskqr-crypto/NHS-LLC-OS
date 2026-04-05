@@ -7,6 +7,12 @@ export async function GET(request: NextRequest) {
   const date = params.get('date')
   const weekStart = params.get('week_start')
   const jobId = params.get('job_id')
+  const startDate = params.get('start_date')
+  const endDate = params.get('end_date')
+  const clientId = params.get('client_id')
+  const propertyId = params.get('property_id')
+  const category = params.get('category')
+  const billableOnly = params.get('billable_only')
 
   let query = supabase
     .from('time_entries')
@@ -26,9 +32,18 @@ export async function GET(request: NextRequest) {
     query = query
       .gte('start_time', `${weekStart}T00:00:00`)
       .lt('start_time', `${endStr}T00:00:00`)
+  } else if (startDate && endDate) {
+    // Arbitrary date range for export
+    query = query
+      .gte('start_time', `${startDate}T00:00:00`)
+      .lt('start_time', `${endDate}T23:59:59`)
   }
 
   if (jobId) query = query.eq('job_id', jobId)
+  if (clientId) query = query.eq('client_id', clientId)
+  if (propertyId) query = query.eq('property_id', propertyId)
+  if (category) query = query.eq('category', category)
+  if (billableOnly === 'true') query = query.eq('billable', true)
 
   const { data, error } = await query
   if (error) return Response.json({ error: error.message }, { status: 500 })

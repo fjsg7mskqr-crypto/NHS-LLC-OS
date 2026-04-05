@@ -45,16 +45,20 @@ export interface TimeEntry {
   id: string
   job_id?: string
   client_id?: string
+  property_id?: string
   category: CategoryType
   start_time: string
   end_time?: string
   duration_minutes?: number
   billable: boolean
-  rate?: number
+  hourly_rate?: number
+  billable_amount?: number
   notes?: string
+  source?: string
   created_at: string
   job?: Job
   client?: Client
+  property?: Property
 }
 
 export interface Task {
