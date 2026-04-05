@@ -28,6 +28,11 @@ export default function JobsTab() {
 
   const handleBack = () => { setSelectedJob(null) }
 
+  const handleUpdated = () => {
+    setSelectedJob(null)
+    setListKey(k => k + 1)
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -39,8 +44,12 @@ export default function JobsTab() {
           <Plus className="w-4 h-4" /> New Job
         </button>
       </div>
-      {selectedJob ? <JobDetail key={selectedJob.id} job={selectedJob} onBack={handleBack} /> : <JobsList key={listKey} onSelect={handleSelect} />}
-      {showCreate && <CreateJobModal onClose={() => setShowCreate(false)} onCreated={() => setListKey(k => k + 1)} />}
+      {selectedJob ? (
+        <JobDetail key={selectedJob.id} job={selectedJob} onBack={handleBack} onUpdated={handleUpdated} />
+      ) : (
+        <JobsList key={listKey} onSelect={handleSelect} />
+      )}
+      {showCreate && <CreateJobModal onClose={() => setShowCreate(false)} onCreated={() => { setShowCreate(false); setListKey(k => k + 1) }} />}
     </div>
   )
 }

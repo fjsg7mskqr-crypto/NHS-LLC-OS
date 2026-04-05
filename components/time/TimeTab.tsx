@@ -9,6 +9,7 @@ import CategoryBreakdown from './CategoryBreakdown'
 import ProfitabilityTables from './ProfitabilityTables'
 import TimesheetExportPanel from './TimesheetExportPanel'
 import TimeEntryForm from './TimeEntryForm'
+import type { TimeEntry } from '@/types'
 
 function getWeekDates() {
   const monday = startOfWeek(new Date(), { weekStartsOn: 1 })
@@ -26,6 +27,16 @@ export default function TimeTab() {
 
   const [selectedDate, setSelectedDate] = useState(defaultDate)
   const [showForm, setShowForm] = useState(false)
+  const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null)
+  const [refreshKey, setRefreshKey] = useState(0)
+
+  const handleEdit = (entry: TimeEntry) => {
+    setEditingEntry(entry)
+  }
+
+  const handleSaved = () => {
+    setRefreshKey(k => k + 1)
+  }
 
   return (
     <div className="space-y-6">
@@ -46,14 +57,15 @@ export default function TimeTab() {
           </button>
         ))}
       </div>
-      <DailyTimeline date={selectedDate} />
+      <DailyTimeline key={`${selectedDate}-${refreshKey}`} date={selectedDate} onEdit={handleEdit} />
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2"><WeeklyChart weekStart={weekStart} /></div>
-        <div><CategoryBreakdown weekStart={weekStart} /></div>
+        <div className="lg:col-span-2"><WeeklyChart key={refreshKey} weekStart={weekStart} /></div>
+        <div><CategoryBreakdown key={refreshKey} weekStart={weekStart} /></div>
       </div>
       <TimesheetExportPanel />
       <ProfitabilityTables />
-      {showForm && <TimeEntryForm onClose={() => setShowForm(false)} />}
+      {showForm && <TimeEntryForm onClose={() => setShowForm(false)} onSaved={handleSaved} />}
+      {editingEntry && <TimeEntryForm entry={editingEntry} onClose={() => setEditingEntry(null)} onSaved={handleSaved} />}
     </div>
   )
 }

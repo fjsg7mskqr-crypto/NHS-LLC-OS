@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { LayoutDashboard, Clock, Briefcase, FileText, Users, Wrench, CalendarDays, BarChart3 } from 'lucide-react'
+import { LayoutDashboard, Clock, Briefcase, FileText, Users, Wrench, CalendarDays, BarChart3, ListTodo } from 'lucide-react'
 import clsx from 'clsx'
 import OverviewTab from '@/components/overview/OverviewTab'
 import TimeTab from '@/components/time/TimeTab'
@@ -11,6 +11,7 @@ import ClientsTab from '@/components/clients/ClientsTab'
 import EquipmentTab from '@/components/equipment/EquipmentTab'
 import CalendarTab from '@/components/calendar/CalendarTab'
 import ReportsTab from '@/components/reports/ReportsTab'
+import TasksTab from '@/components/tasks/TasksTab'
 
 const TABS = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
@@ -20,6 +21,7 @@ const TABS = [
   { id: 'clients', label: 'Clients', icon: Users },
   { id: 'equipment', label: 'Equipment', icon: Wrench },
   { id: 'calendar', label: 'Calendar', icon: CalendarDays },
+  { id: 'tasks', label: 'Tasks', icon: ListTodo },
   { id: 'reports', label: 'Reports', icon: BarChart3 },
 ] as const
 
@@ -66,6 +68,7 @@ export default function DashboardPage() {
           {activeTab === 'clients' && <ClientsTab />}
           {activeTab === 'equipment' && <EquipmentTab />}
           {activeTab === 'calendar' && <CalendarTab />}
+          {activeTab === 'tasks' && <TasksTab />}
           {activeTab === 'reports' && <ReportsTab />}
         </div>
       </div>

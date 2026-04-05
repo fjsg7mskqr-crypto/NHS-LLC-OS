@@ -1,13 +1,34 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { ArrowLeft, MapPin, Clock, DollarSign, CheckCircle, ExternalLink, Repeat, CalendarDays } from 'lucide-react'
+import { ArrowLeft, MapPin, Clock, DollarSign, CheckCircle, ExternalLink, Repeat, CalendarDays, Pencil, Trash2, X } from 'lucide-react'
 import { formatCurrency, formatHours, formatMinutes, statusColor, CATEGORY_COLORS, CATEGORY_LABELS } from '@/lib/utils'
-import type { Job, CategoryType, Invoice, TimeEntry } from '@/types'
+import ErrorBanner from '@/components/ui/ErrorBanner'
+import type { Job, CategoryType, Invoice, TimeEntry, Client, Property, JobStatus } from '@/types'
 
-export default function JobDetail({ job, onBack }: { job: Job; onBack: () => void }) {
+export default function JobDetail({ job, onBack, onUpdated }: { job: Job; onBack: () => void; onUpdated?: () => void }) {
   const [entries, setEntries] = useState<TimeEntry[]>([])
   const [invoice, setInvoice] = useState<Invoice | null>(null)
+  const [editing, setEditing] = useState(false)
+  const [updating, setUpdating] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  // Edit state
+  const [clients, setClients] = useState<Client[]>([])
+  const [allProperties, setAllProperties] = useState<Property[]>([])
+  const [editForm, setEditForm] = useState({
+    title: job.title,
+    description: job.description || '',
+    client_id: job.client_id || '',
+    property_id: job.property_id || '',
+    hourly_rate: String(job.hourly_rate || ''),
+    status: job.status as string,
+    scheduled_date: job.scheduled_date || '',
+    is_recurring: job.is_recurring || false,
+    recurrence: job.recurrence || 'weekly',
+    notes: (job as Job & { notes?: string }).notes || '',
+  })
 
   useEffect(() => {
     fetch(`/api/time-entries?job_id=${job.id}`)
@@ -22,6 +43,13 @@ export default function JobDetail({ job, onBack }: { job: Job; onBack: () => voi
     }
   }, [job.id, job.square_invoice_id])
 
+  useEffect(() => {
+    if (editing) {
+      fetch('/api/clients').then(r => r.json()).then(d => setClients(d || [])).catch(() => {})
+      fetch('/api/properties').then(r => r.json()).then(d => setAllProperties(d || [])).catch(() => {})
+    }
+  }, [editing])
+
   const billableMinutes = entries.filter(e => e.billable).reduce((s, e) => s + (e.duration_minutes || 0), 0)
   const totalMinutes = entries.reduce((s, e) => s + (e.duration_minutes || 0), 0)
   const billedAmount = entries.filter(e => e.billable).reduce((s, e) => s + (e.billable_amount || 0), 0)
@@ -30,11 +58,152 @@ export default function JobDetail({ job, onBack }: { job: Job; onBack: () => voi
   const client = job.client
   const property = job.property
 
+  const handleDelete = async () => {
+    setUpdating(true)
+    setError(null)
+    try {
+      const res = await fetch(`/api/jobs?id=${job.id}`, { method: 'DELETE' })
+      if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || 'Delete failed') }
+      onUpdated?.()
+    } catch (e) { setError(e instanceof Error ? e.message : 'Delete failed') }
+    setUpdating(false)
+  }
+
+  const handleMarkComplete = async () => {
+    setUpdating(true)
+    setError(null)
+    try {
+      const res = await fetch('/api/jobs', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: job.id, status: 'complete', completed_at: new Date().toISOString() }),
+      })
+      if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || 'Update failed') }
+      onUpdated?.()
+    } catch (e) { setError(e instanceof Error ? e.message : 'Update failed') }
+    setUpdating(false)
+  }
+
+  const handleSaveEdit = async () => {
+    if (!editForm.title.trim()) { setError('Title is required'); return }
+    setUpdating(true)
+    setError(null)
+    try {
+      const res = await fetch('/api/jobs', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: job.id,
+          title: editForm.title.trim(),
+          description: editForm.description || null,
+          client_id: editForm.client_id || null,
+          property_id: editForm.property_id || null,
+          hourly_rate: editForm.hourly_rate ? Number(editForm.hourly_rate) : null,
+          status: editForm.status,
+          scheduled_date: editForm.scheduled_date || null,
+          is_recurring: editForm.is_recurring,
+          recurrence: editForm.is_recurring ? editForm.recurrence : null,
+          notes: editForm.notes || null,
+        }),
+      })
+      if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || 'Save failed') }
+      onUpdated?.()
+    } catch (e) { setError(e instanceof Error ? e.message : 'Save failed') }
+    setUpdating(false)
+  }
+
+  const filteredProperties = allProperties.filter(p => p.client_id === editForm.client_id)
+  const inputClass = 'w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-200 focus:outline-none focus:border-emerald-500'
+
   const invStatusColor: Record<string, string> = {
     paid: 'text-emerald-400 bg-emerald-500/15 border-emerald-500/30',
     sent: 'text-blue-400 bg-blue-500/15 border-blue-500/30',
     overdue: 'text-red-400 bg-red-500/15 border-red-500/30',
     draft: 'text-slate-400 bg-slate-500/15 border-slate-500/30',
+  }
+
+  if (editing) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <button onClick={() => setEditing(false)} className="flex items-center gap-2 text-sm text-slate-400 hover:text-slate-200 transition-colors mb-4">
+            <X className="w-4 h-4" /> Cancel editing
+          </button>
+          <h2 className="text-xl font-bold text-white">Edit Job</h2>
+        </div>
+
+        {error && <ErrorBanner message={error} onDismiss={() => setError(null)} />}
+
+        <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-5 space-y-4">
+          <div>
+            <label className="block text-xs text-slate-500 mb-1">Title *</label>
+            <input type="text" value={editForm.title} onChange={e => setEditForm(f => ({ ...f, title: e.target.value }))} className={inputClass} />
+          </div>
+          <div>
+            <label className="block text-xs text-slate-500 mb-1">Description</label>
+            <textarea value={editForm.description} onChange={e => setEditForm(f => ({ ...f, description: e.target.value }))} rows={3} className={`${inputClass} resize-none`} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs text-slate-500 mb-1">Client</label>
+              <select value={editForm.client_id} onChange={e => setEditForm(f => ({ ...f, client_id: e.target.value, property_id: '' }))} className={inputClass}>
+                <option value="">— Select —</option>
+                {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs text-slate-500 mb-1">Property</label>
+              <select value={editForm.property_id} onChange={e => setEditForm(f => ({ ...f, property_id: e.target.value }))} disabled={!editForm.client_id} className={`${inputClass} disabled:opacity-40`}>
+                <option value="">— Select —</option>
+                {filteredProperties.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <label className="block text-xs text-slate-500 mb-1">Hourly Rate</label>
+              <input type="number" value={editForm.hourly_rate} onChange={e => setEditForm(f => ({ ...f, hourly_rate: e.target.value }))} min="0" step="5" className={inputClass} />
+            </div>
+            <div>
+              <label className="block text-xs text-slate-500 mb-1">Status</label>
+              <select value={editForm.status} onChange={e => setEditForm(f => ({ ...f, status: e.target.value }))} className={inputClass}>
+                <option value="scheduled">Scheduled</option>
+                <option value="in_progress">In Progress</option>
+                <option value="complete">Complete</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs text-slate-500 mb-1">Scheduled Date</label>
+              <input type="date" value={editForm.scheduled_date} onChange={e => setEditForm(f => ({ ...f, scheduled_date: e.target.value }))} className={inputClass} />
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" checked={editForm.is_recurring} onChange={e => setEditForm(f => ({ ...f, is_recurring: e.target.checked }))} className="w-4 h-4 rounded border-slate-600 bg-slate-800 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-0" />
+              <span className="text-sm text-slate-300">Recurring job</span>
+            </label>
+            {editForm.is_recurring && (
+              <select value={editForm.recurrence} onChange={e => setEditForm(f => ({ ...f, recurrence: e.target.value }))} className="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
+                <option value="weekly">Weekly</option>
+                <option value="biweekly">Biweekly</option>
+                <option value="monthly">Monthly</option>
+                <option value="quarterly">Quarterly</option>
+                <option value="annually">Annually</option>
+              </select>
+            )}
+          </div>
+          <div>
+            <label className="block text-xs text-slate-500 mb-1">Notes</label>
+            <textarea value={editForm.notes} onChange={e => setEditForm(f => ({ ...f, notes: e.target.value }))} rows={2} className={`${inputClass} resize-none`} />
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button onClick={() => setEditing(false)} className="flex-1 px-4 py-2 rounded-lg border border-slate-700 text-slate-400 hover:text-slate-200 hover:border-slate-600 text-sm font-medium transition-colors">Cancel</button>
+            <button onClick={handleSaveEdit} disabled={updating} className="flex-1 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black font-semibold text-sm transition-colors disabled:opacity-50">{updating ? 'Saving...' : 'Save Changes'}</button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -48,16 +217,45 @@ export default function JobDetail({ job, onBack }: { job: Job; onBack: () => voi
             <div className="flex items-center gap-3 mb-1">
               <h2 className="text-xl font-bold text-white">{job.title}</h2>
               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${statusColor(job.status)}`}>{job.status.replace('_', ' ')}</span>
+              {job.is_recurring && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border bg-violet-500/20 text-violet-400 border-violet-500/30">
+                  <Repeat className="w-3 h-3" /> {job.recurrence || 'Recurring'}
+                </span>
+              )}
             </div>
             {job.description && <p className="text-sm text-slate-400 max-w-xl">{job.description}</p>}
           </div>
-          {job.status !== 'complete' && (
-            <button className="px-4 py-2 rounded-lg border border-slate-700 text-slate-400 hover:text-slate-200 hover:border-slate-600 text-sm font-medium transition-colors flex items-center gap-2">
-              <CheckCircle className="w-4 h-4" /> Mark Complete
+          <div className="flex gap-2">
+            <button
+              onClick={() => setEditing(true)}
+              className="px-4 py-2 rounded-lg border border-slate-700 text-slate-400 hover:text-slate-200 hover:border-slate-600 text-sm font-medium transition-colors flex items-center gap-2"
+            >
+              <Pencil className="w-4 h-4" /> Edit
             </button>
-          )}
+            {job.status !== 'complete' && (
+              <button onClick={handleMarkComplete} disabled={updating}
+                className="px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black font-semibold text-sm transition-colors flex items-center gap-2 disabled:opacity-50">
+                <CheckCircle className="w-4 h-4" /> Mark Complete
+              </button>
+            )}
+            {confirmDelete ? (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-red-400">Delete this job?</span>
+                <button onClick={handleDelete} disabled={updating} className="px-3 py-2 rounded-lg bg-red-500/20 border border-red-500/30 text-red-400 hover:bg-red-500/30 text-sm font-medium transition-colors disabled:opacity-50">Confirm</button>
+                <button onClick={() => setConfirmDelete(false)} className="px-3 py-2 rounded-lg border border-slate-700 text-slate-400 hover:text-slate-200 text-sm transition-colors">Cancel</button>
+              </div>
+            ) : (
+              <button onClick={() => setConfirmDelete(true)}
+                className="px-4 py-2 rounded-lg border border-slate-700 text-slate-500 hover:text-red-400 hover:border-red-500/30 text-sm font-medium transition-colors flex items-center gap-2">
+                <Trash2 className="w-4 h-4" /> Delete
+              </button>
+            )}
+          </div>
         </div>
       </div>
+
+      {error && <ErrorBanner message={error} onDismiss={() => setError(null)} />}
+
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 stagger-grid">
         <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
           <p className="text-xs text-slate-500 mb-1">Client</p>
@@ -85,13 +283,8 @@ export default function JobDetail({ job, onBack }: { job: Job; onBack: () => voi
             <p className="text-sm font-medium text-slate-200">{new Date(job.scheduled_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
           </div>
         )}
-        {job.is_recurring && (
-          <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
-            <p className="text-xs text-slate-500 mb-1 flex items-center gap-1"><Repeat className="w-3 h-3" />Recurrence</p>
-            <p className="text-sm font-medium text-violet-400 capitalize">{job.recurrence || 'Recurring'}</p>
-          </div>
-        )}
       </div>
+
       {invoice && (
         <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-5">
           <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2"><ExternalLink className="w-4 h-4 text-slate-400" />Linked Invoice</h3>

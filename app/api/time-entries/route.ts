@@ -20,12 +20,10 @@ export async function GET(request: NextRequest) {
     .order('start_time', { ascending: true })
 
   if (date) {
-    // Entries for a specific day (local date)
     query = query
       .gte('start_time', `${date}T00:00:00`)
       .lt('start_time', `${date}T23:59:59`)
   } else if (weekStart) {
-    // Entries for a full week starting on weekStart
     const end = new Date(weekStart)
     end.setDate(end.getDate() + 7)
     const endStr = end.toISOString().split('T')[0]
@@ -33,7 +31,6 @@ export async function GET(request: NextRequest) {
       .gte('start_time', `${weekStart}T00:00:00`)
       .lt('start_time', `${endStr}T00:00:00`)
   } else if (startDate && endDate) {
-    // Arbitrary date range for export
     query = query
       .gte('start_time', `${startDate}T00:00:00`)
       .lt('start_time', `${endDate}T23:59:59`)
@@ -48,4 +45,49 @@ export async function GET(request: NextRequest) {
   const { data, error } = await query
   if (error) return Response.json({ error: error.message }, { status: 500 })
   return Response.json(data)
+}
+
+export async function PATCH(request: NextRequest) {
+  const supabase = createServerClient()
+  const body = await request.json()
+  const { id, ...updates } = body
+
+  if (!id) return Response.json({ error: 'id is required' }, { status: 400 })
+
+  // Recalculate duration and billable amount if times changed
+  if (updates.start_time && updates.end_time) {
+    const startTime = new Date(updates.start_time)
+    const endTime = new Date(updates.end_time)
+    updates.duration_minutes = Math.round((endTime.getTime() - startTime.getTime()) / 60000)
+    if (updates.billable && updates.hourly_rate) {
+      updates.billable_amount = Math.round((updates.duration_minutes / 60) * updates.hourly_rate * 100) / 100
+    } else {
+      updates.billable_amount = null
+    }
+  }
+
+  const { data, error } = await supabase
+    .from('time_entries')
+    .update(updates)
+    .eq('id', id)
+    .select(`*, job:jobs(id, title), client:clients(id, name), property:properties(id, name)`)
+    .single()
+
+  if (error) return Response.json({ error: error.message }, { status: 500 })
+  return Response.json(data)
+}
+
+export async function DELETE(request: NextRequest) {
+  const supabase = createServerClient()
+  const id = request.nextUrl.searchParams.get('id')
+
+  if (!id) return Response.json({ error: 'id is required' }, { status: 400 })
+
+  const { error } = await supabase
+    .from('time_entries')
+    .delete()
+    .eq('id', id)
+
+  if (error) return Response.json({ error: error.message }, { status: 500 })
+  return Response.json({ success: true })
 }
