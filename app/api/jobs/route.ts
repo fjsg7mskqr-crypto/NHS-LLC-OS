@@ -8,6 +8,7 @@ export async function GET(request: NextRequest) {
   let query = supabase
     .from('jobs')
     .select(`*, client:clients(*), property:properties(*)`)
+    .is('deleted_at', null)
     .order('created_at', { ascending: false })
 
   if (status) query = query.eq('status', status)

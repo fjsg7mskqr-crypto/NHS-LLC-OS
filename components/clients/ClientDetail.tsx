@@ -165,7 +165,7 @@ export default function ClientDetail({
             </button>
             {confirmDelete ? (
               <div className="flex items-center gap-2">
-                <span className="text-xs text-red-400">Delete this client?</span>
+                <span className="text-xs text-red-400">Delete this client{jobs.length > 0 ? ` and archive ${jobs.length} job${jobs.length > 1 ? 's' : ''}` : ''}?</span>
                 <button onClick={handleDelete} disabled={updating} className="px-3 py-2 rounded-lg bg-red-500/20 border border-red-500/30 text-red-400 hover:bg-red-500/30 text-sm font-medium transition-colors disabled:opacity-50">Confirm</button>
                 <button onClick={() => setConfirmDelete(false)} className="px-3 py-2 rounded-lg border border-slate-700 text-slate-400 hover:text-slate-200 text-sm transition-colors">Cancel</button>
               </div>

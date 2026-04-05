@@ -37,6 +37,7 @@ export interface Job {
   square_invoice_id?: string
   created_at: string
   completed_at?: string
+  deleted_at?: string
   client?: Client
   property?: Property
   time_entries?: TimeEntry[]
@@ -71,6 +72,7 @@ export interface Task {
   due_date?: string
   completed: boolean
   completed_at?: string
+  deleted_at?: string
   job?: Job
   client?: Client
 }

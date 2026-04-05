@@ -88,11 +88,16 @@ export async function DELETE(request: NextRequest) {
 
   if (!id) return Response.json({ error: 'id is required' }, { status: 400 })
 
-  const { error } = await supabase
-    .from('clients')
-    .update({ deleted_at: new Date().toISOString() })
-    .eq('id', id)
+  const now = new Date().toISOString()
 
-  if (error) return Response.json({ error: error.message }, { status: 500 })
+  // Cascade soft-delete: archive the client's jobs and tasks too
+  const [clientRes, jobsRes, tasksRes] = await Promise.all([
+    supabase.from('clients').update({ deleted_at: now }).eq('id', id),
+    supabase.from('jobs').update({ deleted_at: now }).eq('client_id', id).is('deleted_at', null),
+    supabase.from('tasks').update({ deleted_at: now }).eq('client_id', id).is('deleted_at', null),
+  ])
+
+  const firstError = clientRes.error || jobsRes.error || tasksRes.error
+  if (firstError) return Response.json({ error: firstError.message }, { status: 500 })
   return Response.json({ success: true })
 }
