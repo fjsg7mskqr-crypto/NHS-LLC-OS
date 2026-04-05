@@ -9,6 +9,7 @@ export async function GET(request: NextRequest) {
   let query = supabase
     .from('invoices')
     .select(`*, client:clients(*), line_items:invoice_line_items(*)`)
+    .is('deleted_at', null)
     .order('created_at', { ascending: false })
 
   if (status) query = query.eq('status', status)
@@ -106,4 +107,19 @@ export async function PATCH(request: NextRequest) {
 
   if (error) return Response.json({ error: error.message }, { status: 500 })
   return Response.json(data)
+}
+
+export async function DELETE(request: NextRequest) {
+  const supabase = createServerClient()
+  const id = request.nextUrl.searchParams.get('id')
+
+  if (!id) return Response.json({ error: 'id is required' }, { status: 400 })
+
+  const { error } = await supabase
+    .from('invoices')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', id)
+
+  if (error) return Response.json({ error: error.message }, { status: 500 })
+  return Response.json({ success: true })
 }

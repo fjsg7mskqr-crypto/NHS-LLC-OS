@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { ArrowLeft, Send, CheckCircle, ExternalLink } from 'lucide-react'
+import { ArrowLeft, Send, CheckCircle, ExternalLink, Trash2 } from 'lucide-react'
 import { formatCurrency, formatDate, invoiceStatusColor } from '@/lib/utils'
 import type { Invoice } from '@/types'
 
@@ -15,6 +15,16 @@ export default function InvoiceDetail({
   onUpdated: () => void
 }) {
   const [updating, setUpdating] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+
+  const handleDelete = async () => {
+    setUpdating(true)
+    try {
+      const res = await fetch(`/api/invoices?id=${invoice.id}`, { method: 'DELETE' })
+      if (res.ok) onUpdated()
+    } catch {}
+    setUpdating(false)
+  }
 
   const markStatus = async (status: 'sent' | 'paid') => {
     setUpdating(true)
@@ -69,6 +79,31 @@ export default function InvoiceDetail({
                 className="px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black font-semibold text-sm transition-colors flex items-center gap-2 disabled:opacity-50"
               >
                 <CheckCircle className="w-4 h-4" /> Mark as Paid
+              </button>
+            )}
+            {confirmDelete ? (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-red-400">Delete this invoice?</span>
+                <button
+                  onClick={handleDelete}
+                  disabled={updating}
+                  className="px-3 py-2 rounded-lg bg-red-500/20 border border-red-500/30 text-red-400 hover:bg-red-500/30 text-sm font-medium transition-colors disabled:opacity-50"
+                >
+                  Confirm
+                </button>
+                <button
+                  onClick={() => setConfirmDelete(false)}
+                  className="px-3 py-2 rounded-lg border border-slate-700 text-slate-400 hover:text-slate-200 text-sm transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setConfirmDelete(true)}
+                className="px-4 py-2 rounded-lg border border-slate-700 text-slate-500 hover:text-red-400 hover:border-red-500/30 text-sm font-medium transition-colors flex items-center gap-2"
+              >
+                <Trash2 className="w-4 h-4" /> Delete
               </button>
             )}
           </div>
