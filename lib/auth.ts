@@ -19,14 +19,30 @@ type AuthenticatedRequest =
   | { response: Response }
 
 function getAllowedEmails() {
-  return (process.env.AUTHORIZED_GOOGLE_EMAILS ?? '')
+  return (process.env.AUTHORIZED_EMAILS ?? process.env.AUTHORIZED_GOOGLE_EMAILS ?? '')
     .split(',')
     .map((email) => email.trim().toLowerCase())
     .filter(Boolean)
 }
 
-export function isAuthorizedUser(user: Pick<User, 'email'>) {
+function getAllowedGitHubLogins() {
+  return (process.env.AUTHORIZED_GITHUB_LOGINS ?? '')
+    .split(',')
+    .map((login) => login.trim().toLowerCase())
+    .filter(Boolean)
+}
+
+export function isAuthorizedUser(user: User) {
   const allowedEmails = getAllowedEmails()
+  const allowedGitHubLogins = getAllowedGitHubLogins()
+  const githubLogin = user.user_metadata?.user_name ?? user.user_metadata?.preferred_username
+
+  if (allowedGitHubLogins.length > 0) {
+    return (
+      typeof githubLogin === 'string' &&
+      allowedGitHubLogins.includes(githubLogin.toLowerCase())
+    )
+  }
 
   if (allowedEmails.length === 0) {
     return true
@@ -110,15 +126,16 @@ export function sanitizeNextPath(nextPath: string | null | undefined) {
   return nextPath
 }
 
-export async function createGoogleAuthUrl(request: NextRequest, nextPath?: string | null) {
+export async function createGitHubAuthUrl(request: NextRequest, nextPath?: string | null) {
   const supabase = createAuthClient(createPkceCookieStorage(request))
   const redirectTo = new URL('/auth/callback', request.nextUrl.origin)
   redirectTo.searchParams.set('next', sanitizeNextPath(nextPath))
 
   const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: 'google',
+    provider: 'github',
     options: {
       redirectTo: redirectTo.toString(),
+      scopes: 'user:email',
       skipBrowserRedirect: true,
     },
   })
