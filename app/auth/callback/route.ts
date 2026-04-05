@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
 
     if (!isAuthorizedUser(session.user)) {
       const loginUrl = new URL('/login', request.url)
-      loginUrl.searchParams.set('error', 'This Google account is not authorized.')
+      loginUrl.searchParams.set('error', 'This GitHub account is not authorized.')
       loginUrl.searchParams.set('next', nextPath)
       const response = NextResponse.redirect(loginUrl)
       clearSessionCookies(response)
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
     return response
   } catch (error) {
     const message =
-      error instanceof Error ? error.message : 'Unable to complete Google sign-in.'
+      error instanceof Error ? error.message : 'Unable to complete GitHub sign-in.'
     const loginUrl = new URL('/login', request.url)
     loginUrl.searchParams.set('error', message)
     loginUrl.searchParams.set('next', nextPath)

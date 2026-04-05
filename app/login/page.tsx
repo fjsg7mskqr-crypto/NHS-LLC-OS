@@ -25,7 +25,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             </div>
             <h1 className="text-3xl font-semibold tracking-tight">Sign in</h1>
             <p className="mt-3 text-sm leading-6 text-slate-400">
-              Google auth now gates the live dashboard and API routes.
+              GitHub auth now gates the live dashboard and API routes.
             </p>
           </div>
 
@@ -39,11 +39,11 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             href={`/auth/login?next=${encodeURIComponent(nextPath)}`}
             className="flex w-full items-center justify-center rounded-2xl bg-white px-4 py-3 text-sm font-medium text-slate-950 transition hover:bg-slate-100"
           >
-            Continue with Google
+            Continue with GitHub
           </a>
 
           <p className="mt-6 text-xs leading-5 text-slate-500">
-            If Google login fails, verify the redirect URL in Supabase and Google Cloud:
+            If GitHub login fails, verify the callback URL in Supabase and GitHub:
             <span className="font-mono text-slate-400"> /auth/callback</span>.
           </p>
         </div>
