@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Search, ChevronDown, ArrowUpRight } from 'lucide-react'
+import { Search, ChevronDown, ArrowUpRight, Briefcase } from 'lucide-react'
 import { statusColor } from '@/lib/utils'
 import type { Client, Job, JobStatus } from '@/types'
 
@@ -86,7 +86,7 @@ export default function JobsList({ onSelect }: { onSelect: (id: string) => void 
             ))}
           </tbody>
         </table>
-        {filtered.length === 0 && <div className="py-12 text-center text-slate-500 text-sm">No jobs match your filters</div>}
+        {filtered.length === 0 && <div className="py-12 text-center text-slate-500 text-sm"><Briefcase className="w-8 h-8 mx-auto mb-2 text-slate-700 empty-state-icon" />No jobs match your filters</div>}
       </div>
       <div className="px-5 py-3 border-t border-slate-800"><p className="text-xs text-slate-600">{filtered.length} jobs shown</p></div>
     </div>

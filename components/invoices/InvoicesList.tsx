@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Search, ChevronDown, ArrowUpRight } from 'lucide-react'
+import { Search, ChevronDown, ArrowUpRight, FileText } from 'lucide-react'
 import { formatCurrency, formatDate, invoiceStatusColor } from '@/lib/utils'
 import type { Client, Invoice, InvoiceStatus } from '@/types'
 
@@ -164,7 +164,10 @@ export default function InvoicesList({ onSelect }: { onSelect: (id: string) => v
           <div className="py-12 text-center text-slate-500 text-sm">Loading invoices...</div>
         )}
         {!loading && filtered.length === 0 && (
-          <div className="py-12 text-center text-slate-500 text-sm">No invoices match your filters</div>
+          <div className="py-12 text-center text-slate-500 text-sm">
+            <FileText className="w-8 h-8 mx-auto mb-2 text-slate-700 empty-state-icon" />
+            No invoices match your filters
+          </div>
         )}
       </div>
       <div className="px-5 py-3 border-t border-slate-800">

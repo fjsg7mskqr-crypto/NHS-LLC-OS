@@ -58,7 +58,7 @@ export default function JobDetail({ job, onBack }: { job: Job; onBack: () => voi
           )}
         </div>
       </div>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 stagger-grid">
         <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
           <p className="text-xs text-slate-500 mb-1">Client</p>
           <p className="text-sm font-medium text-slate-200">{client?.name || '—'}</p>

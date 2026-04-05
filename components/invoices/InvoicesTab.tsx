@@ -69,22 +69,22 @@ export default function InvoicesTab() {
       </div>
 
       {/* Summary Metrics */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 stagger-grid">
+        <div className="metric-card metric-card--amber rounded-xl border border-slate-800 bg-slate-900/50 p-4">
           <p className="text-xs text-slate-500 mb-1">Total Outstanding</p>
-          <p className="text-lg font-semibold text-amber-400">{formatCurrency(outstanding)}</p>
+          <p className="text-lg font-semibold text-amber-400 glow-amber">{formatCurrency(outstanding)}</p>
         </div>
-        <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
+        <div className="metric-card metric-card--red rounded-xl border border-slate-800 bg-slate-900/50 p-4">
           <p className="text-xs text-slate-500 mb-1">Total Overdue</p>
-          <p className="text-lg font-semibold text-red-400">{formatCurrency(overdue)}</p>
+          <p className="text-lg font-semibold text-red-400 glow-red">{formatCurrency(overdue)}</p>
         </div>
-        <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
+        <div className="metric-card metric-card--emerald rounded-xl border border-slate-800 bg-slate-900/50 p-4">
           <p className="text-xs text-slate-500 mb-1">Paid (This Month)</p>
-          <p className="text-lg font-semibold text-emerald-400">{formatCurrency(paidThisMonth)}</p>
+          <p className="text-lg font-semibold text-emerald-400 glow-emerald">{formatCurrency(paidThisMonth)}</p>
         </div>
-        <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
+        <div className="metric-card metric-card--emerald rounded-xl border border-slate-800 bg-slate-900/50 p-4">
           <p className="text-xs text-slate-500 mb-1">Paid (YTD)</p>
-          <p className="text-lg font-semibold text-emerald-400">{formatCurrency(paidYTD)}</p>
+          <p className="text-lg font-semibold text-emerald-400 glow-emerald">{formatCurrency(paidYTD)}</p>
         </div>
       </div>
 

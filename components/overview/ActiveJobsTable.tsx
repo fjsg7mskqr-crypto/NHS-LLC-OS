@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { ArrowUpRight } from 'lucide-react'
+import { ArrowUpRight, Briefcase } from 'lucide-react'
 import { statusColor } from '@/lib/utils'
 
 interface JobRow {
@@ -31,7 +31,10 @@ export default function ActiveJobsTable() {
           <h2 className="font-semibold text-white">Active Jobs</h2>
           <span className="text-xs text-slate-500">0 jobs</span>
         </div>
-        <div className="py-10 text-center text-slate-500 text-sm">No active jobs</div>
+        <div className="py-10 text-center text-slate-500 text-sm">
+          <Briefcase className="w-8 h-8 mx-auto mb-2 text-slate-700 empty-state-icon" />
+          No active jobs
+        </div>
       </div>
     )
   }

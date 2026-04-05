@@ -56,7 +56,7 @@ export default function Header() {
   }, [])
 
   return (
-    <header className="sticky top-0 z-20 bg-[#0a0f1a] border-b border-slate-800">
+    <header className="sticky top-0 z-20 bg-[#0a0f1a]/95 backdrop-blur-md border-b border-slate-800 header-glow">
       <div className="max-w-screen-xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-7 h-7 rounded-md bg-emerald-500 flex items-center justify-center">
