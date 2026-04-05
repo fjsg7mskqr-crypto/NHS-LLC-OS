@@ -5,6 +5,7 @@ import SubTabs from '@/components/ui/SubTabs'
 import CalendarTab from '@/components/calendar/CalendarTab'
 import EquipmentTab from '@/components/equipment/EquipmentTab'
 import TasksTab from '@/components/tasks/TasksTab'
+import DiscordSetupCard from '@/components/admin/DiscordSetupCard'
 
 const TABS = [
   { id: 'calendar', label: 'Calendar' },
@@ -19,6 +20,7 @@ export default function MoreSection() {
 
   return (
     <div className="space-y-4">
+      <DiscordSetupCard />
       <SubTabs tabs={TABS} active={active} onChange={setActive} />
       <div className="tab-content" key={active}>
         {active === 'calendar' && <CalendarTab />}

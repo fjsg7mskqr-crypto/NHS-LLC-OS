@@ -1,8 +1,9 @@
 import { type NextRequest } from 'next/server'
 import { withAuthenticatedRoute } from '@/lib/auth'
 import { createServerClient } from '@/lib/supabase-server'
+import { createCalendarBlock, VALID_BLOCK_TYPES } from '@/lib/domain/calendar'
 
-const VALID_TYPES = ['sbr_booking', 'job_day']
+const VALID_TYPES = VALID_BLOCK_TYPES
 
 export const GET = withAuthenticatedRoute(async function GET() {
   const supabase = createServerClient()
@@ -25,9 +26,8 @@ export const POST = withAuthenticatedRoute(async function POST(request: NextRequ
     return Response.json({ error: `type must be one of: ${VALID_TYPES.join(', ')}` }, { status: 400 })
   }
 
-  const { data, error } = await supabase
-    .from('calendar_blocks')
-    .insert({
+  try {
+    const data = await createCalendarBlock(supabase, {
       property_id: body.property_id || null,
       type: body.type || 'job_day',
       start_date: body.start_date,
@@ -35,11 +35,14 @@ export const POST = withAuthenticatedRoute(async function POST(request: NextRequ
       notes: body.notes || null,
       source: body.source || 'manual',
     })
-    .select(`*, property:properties(id, name, client_id)`)
-    .single()
 
-  if (error) return Response.json({ error: error.message }, { status: 500 })
-  return Response.json(data, { status: 201 })
+    return Response.json(data, { status: 201 })
+  } catch (error) {
+    return Response.json(
+      { error: error instanceof Error ? error.message : 'Failed to create calendar block' },
+      { status: 500 }
+    )
+  }
 })
 
 export const PATCH = withAuthenticatedRoute(async function PATCH(request: NextRequest) {

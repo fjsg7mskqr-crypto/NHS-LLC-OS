@@ -1,8 +1,7 @@
 import { type NextRequest } from 'next/server'
 import { withAuthenticatedRoute } from '@/lib/auth'
 import { createServerClient } from '@/lib/supabase-server'
-
-const VALID_PRIORITIES = ['high', 'medium', 'low']
+import { createTask, VALID_PRIORITIES } from '@/lib/domain/tasks'
 
 export const GET = withAuthenticatedRoute(async function GET(request: NextRequest) {
   const supabase = createServerClient()
@@ -38,22 +37,23 @@ export const POST = withAuthenticatedRoute(async function POST(request: NextRequ
     return Response.json({ error: `priority must be one of: ${VALID_PRIORITIES.join(', ')}` }, { status: 400 })
   }
 
-  const { data, error } = await supabase
-    .from('tasks')
-    .insert({
+  try {
+    const data = await createTask(supabase, {
       title: body.title.trim(),
       priority: body.priority || 'medium',
       due_date: body.due_date || null,
       client_id: body.client_id || null,
       property_id: body.property_id || null,
       job_id: body.job_id || null,
-      completed: false,
     })
-    .select(`*, client:clients(id, name), job:jobs(id, title)`)
-    .single()
 
-  if (error) return Response.json({ error: error.message }, { status: 500 })
-  return Response.json(data, { status: 201 })
+    return Response.json(data, { status: 201 })
+  } catch (error) {
+    return Response.json(
+      { error: error instanceof Error ? error.message : 'Failed to create task' },
+      { status: 500 }
+    )
+  }
 })
 
 export const PATCH = withAuthenticatedRoute(async function PATCH(request: NextRequest) {
