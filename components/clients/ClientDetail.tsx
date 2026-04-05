@@ -28,6 +28,8 @@ export default function ClientDetail({
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showAddProperty, setShowAddProperty] = useState(false)
+  const [editingProperty, setEditingProperty] = useState<Property | null>(null)
+  const [confirmDeletePropId, setConfirmDeletePropId] = useState<string | null>(null)
 
   const [properties, setProperties] = useState<Property[]>([])
   const [jobs, setJobs] = useState<Job[]>([])
@@ -88,6 +90,22 @@ export default function ClientDetail({
       onUpdated()
     } catch (e) { setError(e instanceof Error ? e.message : 'Save failed') }
     setUpdating(false)
+  }
+
+  const handleDeleteProperty = async (id: string) => {
+    setUpdating(true)
+    setError(null)
+    try {
+      const res = await fetch(`/api/properties?id=${id}`, { method: 'DELETE' })
+      if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || 'Delete failed') }
+      setConfirmDeletePropId(null)
+      setProperties(prev => prev.filter(p => p.id !== id))
+    } catch (e) { setError(e instanceof Error ? e.message : 'Delete failed') }
+    setUpdating(false)
+  }
+
+  const refreshProperties = () => {
+    fetch(`/api/properties?client_id=${client.id}`).then(r => r.json()).then(d => setProperties(d || [])).catch(() => {})
   }
 
   const inputClass = 'w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-emerald-500'
@@ -234,6 +252,7 @@ export default function ClientDetail({
                 <th className="text-left px-5 py-3 text-xs font-medium text-slate-500 uppercase tracking-wide">Name</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wide hidden md:table-cell">Address</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wide">Type</th>
+                <th className="text-right px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wide w-24">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/50">
@@ -245,6 +264,19 @@ export default function ClientDetail({
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border bg-slate-500/20 text-slate-400 border-slate-500/30">
                       {PROPERTY_TYPE_LABELS[prop.type] || prop.type}
                     </span>
+                  </td>
+                  <td className="px-4 py-3.5 text-right">
+                    {confirmDeletePropId === prop.id ? (
+                      <div className="flex justify-end items-center gap-1">
+                        <button onClick={() => handleDeleteProperty(prop.id)} disabled={updating} className="px-2 py-1 rounded text-xs bg-red-500/20 border border-red-500/30 text-red-400 hover:bg-red-500/30 disabled:opacity-50">Delete</button>
+                        <button onClick={() => setConfirmDeletePropId(null)} className="px-2 py-1 rounded text-xs border border-slate-700 text-slate-400 hover:text-slate-200">No</button>
+                      </div>
+                    ) : (
+                      <div className="flex justify-end gap-1">
+                        <button onClick={() => setEditingProperty(prop)} className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-500 hover:text-slate-300 transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
+                        <button onClick={() => setConfirmDeletePropId(prop.id)} className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-500 hover:text-red-400 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -331,11 +363,16 @@ export default function ClientDetail({
         <CreatePropertyModal
           clientId={client.id}
           onClose={() => setShowAddProperty(false)}
-          onCreated={() => {
-            setShowAddProperty(false)
-            // Refresh properties
-            fetch(`/api/properties?client_id=${client.id}`).then(r => r.json()).then(d => setProperties(d || [])).catch(() => {})
-          }}
+          onCreated={() => { setShowAddProperty(false); refreshProperties() }}
+        />
+      )}
+
+      {editingProperty && (
+        <CreatePropertyModal
+          clientId={client.id}
+          property={editingProperty}
+          onClose={() => setEditingProperty(null)}
+          onCreated={() => { setEditingProperty(null); refreshProperties() }}
         />
       )}
     </div>

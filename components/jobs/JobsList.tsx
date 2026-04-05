@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Search, ChevronDown, ArrowUpRight, Briefcase } from 'lucide-react'
+import { Search, ChevronDown, ArrowUpRight, Briefcase, Repeat } from 'lucide-react'
 import { statusColor } from '@/lib/utils'
 import type { Client, Job, JobStatus } from '@/types'
 
@@ -71,7 +71,10 @@ export default function JobsList({ onSelect }: { onSelect: (id: string) => void 
                 <td className="px-5 py-3.5">
                   <div className="flex items-center gap-2">
                     <div>
-                      <p className="text-sm font-medium text-slate-200 group-hover:text-white transition-colors">{job.title}</p>
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-sm font-medium text-slate-200 group-hover:text-white transition-colors">{job.title}</p>
+                        {job.is_recurring && <span title={`Recurring: ${job.recurrence || 'yes'}`}><Repeat className="w-3 h-3 text-violet-400 flex-shrink-0" /></span>}
+                      </div>
                       {job.description && <p className="text-xs text-slate-600 mt-0.5 truncate max-w-xs">{job.description}</p>}
                     </div>
                     <ArrowUpRight className="w-3.5 h-3.5 text-slate-600 group-hover:text-slate-400 transition-colors flex-shrink-0 opacity-0 group-hover:opacity-100" />

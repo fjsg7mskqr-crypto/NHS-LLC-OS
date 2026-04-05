@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { ArrowLeft, MapPin, Clock, DollarSign, CheckCircle, ExternalLink } from 'lucide-react'
+import { ArrowLeft, MapPin, Clock, DollarSign, CheckCircle, ExternalLink, Repeat, CalendarDays } from 'lucide-react'
 import { formatCurrency, formatHours, formatMinutes, statusColor, CATEGORY_COLORS, CATEGORY_LABELS } from '@/lib/utils'
 import type { Job, CategoryType, Invoice, TimeEntry } from '@/types'
 
@@ -79,6 +79,18 @@ export default function JobDetail({ job, onBack }: { job: Job; onBack: () => voi
           <p className="text-sm font-medium text-emerald-400">{billedAmount > 0 ? formatCurrency(billedAmount) : '—'}</p>
           <p className="text-xs text-slate-500 mt-0.5">{effectiveRate > 0 ? `$${effectiveRate.toFixed(0)}/hr eff.` : `$${job.hourly_rate || '—'}/hr target`}</p>
         </div>
+        {job.scheduled_date && (
+          <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
+            <p className="text-xs text-slate-500 mb-1 flex items-center gap-1"><CalendarDays className="w-3 h-3" />Scheduled</p>
+            <p className="text-sm font-medium text-slate-200">{new Date(job.scheduled_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+          </div>
+        )}
+        {job.is_recurring && (
+          <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
+            <p className="text-xs text-slate-500 mb-1 flex items-center gap-1"><Repeat className="w-3 h-3" />Recurrence</p>
+            <p className="text-sm font-medium text-violet-400 capitalize">{job.recurrence || 'Recurring'}</p>
+          </div>
+        )}
       </div>
       {invoice && (
         <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-5">

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useId } from 'react'
 import { X } from 'lucide-react'
 import ErrorBanner from '@/components/ui/ErrorBanner'
+import type { Property } from '@/types'
 
 interface PropertyForm {
   name: string
@@ -13,19 +14,22 @@ interface PropertyForm {
 
 export default function CreatePropertyModal({
   clientId,
+  property,
   onClose,
   onCreated,
 }: {
   clientId: string
+  property?: Property
   onClose: () => void
   onCreated?: () => void
 }) {
   const titleId = useId()
+  const isEdit = !!property
   const [form, setForm] = useState<PropertyForm>({
-    name: '',
-    address: '',
-    type: 'residential',
-    notes: '',
+    name: property?.name || '',
+    address: property?.address || '',
+    type: property?.type || 'residential',
+    notes: property?.notes || '',
   })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -49,10 +53,10 @@ export default function CreatePropertyModal({
     setError(null)
     try {
       const res = await fetch('/api/properties', {
-        method: 'POST',
+        method: isEdit ? 'PATCH' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          client_id: clientId,
+          ...(isEdit ? { id: property.id } : { client_id: clientId }),
           name: form.name.trim(),
           address: form.address || null,
           type: form.type,
@@ -61,11 +65,11 @@ export default function CreatePropertyModal({
       })
       if (!res.ok) {
         const d = await res.json().catch(() => ({}))
-        throw new Error(d.error || 'Failed to create property')
+        throw new Error(d.error || `Failed to ${isEdit ? 'update' : 'create'} property`)
       }
       onCreated?.()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to create property')
+      setError(e instanceof Error ? e.message : `Failed to ${isEdit ? 'update' : 'create'} property`)
     }
     setSaving(false)
   }
@@ -82,7 +86,7 @@ export default function CreatePropertyModal({
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-xl border border-slate-700 bg-slate-900 shadow-2xl">
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800 sticky top-0 bg-slate-900 z-10">
-          <h2 id={titleId} className="font-semibold text-white">Add Property</h2>
+          <h2 id={titleId} className="font-semibold text-white">{isEdit ? 'Edit Property' : 'Add Property'}</h2>
           <button
             onClick={onClose}
             aria-label="Close dialog"
@@ -118,7 +122,7 @@ export default function CreatePropertyModal({
 
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose} className="flex-1 px-4 py-2 rounded-lg border border-slate-700 text-slate-400 hover:text-slate-200 hover:border-slate-600 text-sm font-medium transition-colors">Cancel</button>
-            <button type="submit" disabled={saving} className="flex-1 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black font-semibold text-sm transition-colors disabled:opacity-50">{saving ? 'Saving...' : 'Add Property'}</button>
+            <button type="submit" disabled={saving} className="flex-1 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black font-semibold text-sm transition-colors disabled:opacity-50">{saving ? 'Saving...' : isEdit ? 'Save Changes' : 'Add Property'}</button>
           </div>
         </form>
       </div>

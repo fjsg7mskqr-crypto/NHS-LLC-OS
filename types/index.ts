@@ -35,6 +35,9 @@ export interface Job {
   hourly_rate?: number
   target_rate?: number
   square_invoice_id?: string
+  is_recurring?: boolean
+  recurrence?: string
+  scheduled_date?: string
   created_at: string
   completed_at?: string
   deleted_at?: string

@@ -1,13 +1,16 @@
 'use client'
 
 import { useState } from 'react'
-import { LayoutDashboard, Clock, Briefcase, FileText, Users } from 'lucide-react'
+import { LayoutDashboard, Clock, Briefcase, FileText, Users, Wrench, CalendarDays, BarChart3 } from 'lucide-react'
 import clsx from 'clsx'
 import OverviewTab from '@/components/overview/OverviewTab'
 import TimeTab from '@/components/time/TimeTab'
 import JobsTab from '@/components/jobs/JobsTab'
 import InvoicesTab from '@/components/invoices/InvoicesTab'
 import ClientsTab from '@/components/clients/ClientsTab'
+import EquipmentTab from '@/components/equipment/EquipmentTab'
+import CalendarTab from '@/components/calendar/CalendarTab'
+import ReportsTab from '@/components/reports/ReportsTab'
 
 const TABS = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
@@ -15,6 +18,9 @@ const TABS = [
   { id: 'jobs', label: 'Jobs', icon: Briefcase },
   { id: 'invoices', label: 'Invoices', icon: FileText },
   { id: 'clients', label: 'Clients', icon: Users },
+  { id: 'equipment', label: 'Equipment', icon: Wrench },
+  { id: 'calendar', label: 'Calendar', icon: CalendarDays },
+  { id: 'reports', label: 'Reports', icon: BarChart3 },
 ] as const
 
 type TabId = (typeof TABS)[number]['id']
@@ -58,6 +64,9 @@ export default function DashboardPage() {
           {activeTab === 'jobs' && <JobsTab />}
           {activeTab === 'invoices' && <InvoicesTab />}
           {activeTab === 'clients' && <ClientsTab />}
+          {activeTab === 'equipment' && <EquipmentTab />}
+          {activeTab === 'calendar' && <CalendarTab />}
+          {activeTab === 'reports' && <ReportsTab />}
         </div>
       </div>
     </div>

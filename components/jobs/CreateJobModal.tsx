@@ -11,6 +11,9 @@ interface JobFormState {
   propertyId: string
   hourlyRate: string
   status: Exclude<JobStatus, 'active'>
+  scheduledDate: string
+  isRecurring: boolean
+  recurrence: string
 }
 
 export default function CreateJobModal({ onClose, onCreated }: { onClose: () => void; onCreated?: () => void }) {
@@ -21,6 +24,9 @@ export default function CreateJobModal({ onClose, onCreated }: { onClose: () => 
     propertyId: '',
     hourlyRate: '',
     status: 'scheduled',
+    scheduledDate: '',
+    isRecurring: false,
+    recurrence: 'weekly',
   })
   const [clients, setClients] = useState<Client[]>([])
   const [allProperties, setAllProperties] = useState<Property[]>([])
@@ -53,6 +59,9 @@ export default function CreateJobModal({ onClose, onCreated }: { onClose: () => 
           property_id: form.propertyId || null,
           hourly_rate: form.hourlyRate ? Number(form.hourlyRate) : null,
           status: form.status,
+          scheduled_date: form.scheduledDate || null,
+          is_recurring: form.isRecurring,
+          recurrence: form.isRecurring ? form.recurrence : null,
         }),
       })
       if (res.ok) { onCreated?.(); onClose() }
@@ -93,7 +102,7 @@ export default function CreateJobModal({ onClose, onCreated }: { onClose: () => 
               </select>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-3">
             <div>
               <label className="block text-xs text-slate-500 mb-1">Hourly Rate ($/hr)</label>
               <input type="number" value={form.hourlyRate} onChange={e => set('hourlyRate', e.target.value)} placeholder="e.g. 85" min="0" step="5" className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-emerald-500" />
@@ -107,6 +116,25 @@ export default function CreateJobModal({ onClose, onCreated }: { onClose: () => 
                 <option value="cancelled">Cancelled</option>
               </select>
             </div>
+            <div>
+              <label className="block text-xs text-slate-500 mb-1">Scheduled Date</label>
+              <input type="date" value={form.scheduledDate} onChange={e => set('scheduledDate', e.target.value)} className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-200 focus:outline-none focus:border-emerald-500" />
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" checked={form.isRecurring} onChange={e => set('isRecurring', e.target.checked)} className="w-4 h-4 rounded border-slate-600 bg-slate-800 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-0" />
+              <span className="text-sm text-slate-300">Recurring job</span>
+            </label>
+            {form.isRecurring && (
+              <select value={form.recurrence} onChange={e => set('recurrence', e.target.value)} className="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
+                <option value="weekly">Weekly</option>
+                <option value="biweekly">Biweekly</option>
+                <option value="monthly">Monthly</option>
+                <option value="quarterly">Quarterly</option>
+                <option value="annually">Annually</option>
+              </select>
+            )}
           </div>
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose} className="flex-1 px-4 py-2 rounded-lg border border-slate-700 text-slate-400 hover:text-slate-200 hover:border-slate-600 text-sm font-medium transition-colors">Cancel</button>
