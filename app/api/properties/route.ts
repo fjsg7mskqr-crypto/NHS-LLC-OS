@@ -1,12 +1,93 @@
+import { type NextRequest } from 'next/server'
 import { createServerClient } from '@/lib/supabase-server'
 
-export async function GET() {
+const VALID_TYPES = ['residential', 'commercial', 'vacation_rental', 'other']
+
+export async function GET(request: NextRequest) {
   const supabase = createServerClient()
-  const { data, error } = await supabase
+  const clientId = request.nextUrl.searchParams.get('client_id')
+
+  let query = supabase
     .from('properties')
     .select('*, client:clients(id, name)')
     .order('name')
 
+  if (clientId) query = query.eq('client_id', clientId)
+
+  const { data, error } = await query
   if (error) return Response.json({ error: error.message }, { status: 500 })
   return Response.json(data)
+}
+
+export async function POST(request: NextRequest) {
+  const supabase = createServerClient()
+  const body = await request.json()
+
+  if (!body.name || typeof body.name !== 'string' || !body.name.trim()) {
+    return Response.json({ error: 'name is required' }, { status: 400 })
+  }
+  if (!body.client_id) {
+    return Response.json({ error: 'client_id is required' }, { status: 400 })
+  }
+  if (body.type && !VALID_TYPES.includes(body.type)) {
+    return Response.json({ error: `type must be one of: ${VALID_TYPES.join(', ')}` }, { status: 400 })
+  }
+
+  const { data, error } = await supabase
+    .from('properties')
+    .insert({
+      client_id: body.client_id,
+      name: body.name.trim(),
+      address: body.address || null,
+      type: body.type || 'residential',
+      notes: body.notes || null,
+    })
+    .select('*, client:clients(id, name)')
+    .single()
+
+  if (error) return Response.json({ error: error.message }, { status: 500 })
+  return Response.json(data, { status: 201 })
+}
+
+export async function PATCH(request: NextRequest) {
+  const supabase = createServerClient()
+  const body = await request.json()
+  const { id, ...updates } = body
+
+  if (!id) return Response.json({ error: 'id is required' }, { status: 400 })
+
+  if (updates.name !== undefined) {
+    if (typeof updates.name !== 'string' || !updates.name.trim()) {
+      return Response.json({ error: 'name cannot be empty' }, { status: 400 })
+    }
+    updates.name = updates.name.trim()
+  }
+  if (updates.type && !VALID_TYPES.includes(updates.type)) {
+    return Response.json({ error: `type must be one of: ${VALID_TYPES.join(', ')}` }, { status: 400 })
+  }
+
+  const { data, error } = await supabase
+    .from('properties')
+    .update(updates)
+    .eq('id', id)
+    .select('*, client:clients(id, name)')
+    .single()
+
+  if (error) return Response.json({ error: error.message }, { status: 500 })
+  return Response.json(data)
+}
+
+export async function DELETE(request: NextRequest) {
+  const supabase = createServerClient()
+  const id = request.nextUrl.searchParams.get('id')
+
+  if (!id) return Response.json({ error: 'id is required' }, { status: 400 })
+
+  const { error } = await supabase
+    .from('properties')
+    .delete()
+    .eq('id', id)
+
+  if (error) return Response.json({ error: error.message }, { status: 500 })
+  return Response.json({ success: true })
 }

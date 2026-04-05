@@ -1,18 +1,20 @@
 'use client'
 
 import { useState } from 'react'
-import { LayoutDashboard, Clock, Briefcase, FileText } from 'lucide-react'
+import { LayoutDashboard, Clock, Briefcase, FileText, Users } from 'lucide-react'
 import clsx from 'clsx'
 import OverviewTab from '@/components/overview/OverviewTab'
 import TimeTab from '@/components/time/TimeTab'
 import JobsTab from '@/components/jobs/JobsTab'
 import InvoicesTab from '@/components/invoices/InvoicesTab'
+import ClientsTab from '@/components/clients/ClientsTab'
 
 const TABS = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
   { id: 'time', label: 'Time', icon: Clock },
   { id: 'jobs', label: 'Jobs', icon: Briefcase },
   { id: 'invoices', label: 'Invoices', icon: FileText },
+  { id: 'clients', label: 'Clients', icon: Users },
 ] as const
 
 type TabId = (typeof TABS)[number]['id']
@@ -55,6 +57,7 @@ export default function DashboardPage() {
           {activeTab === 'time' && <TimeTab />}
           {activeTab === 'jobs' && <JobsTab />}
           {activeTab === 'invoices' && <InvoicesTab />}
+          {activeTab === 'clients' && <ClientsTab />}
         </div>
       </div>
     </div>

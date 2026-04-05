@@ -12,6 +12,7 @@ export interface Client {
   default_hourly_rate: number
   notes?: string
   created_at: string
+  deleted_at?: string
 }
 
 export interface Property {
