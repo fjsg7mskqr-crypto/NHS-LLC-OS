@@ -1,14 +1,14 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Briefcase, Clock, DollarSign, CreditCard } from 'lucide-react'
+import { Briefcase, Clock, DollarSign, FileText } from 'lucide-react'
 import { formatCurrency, formatHours } from '@/lib/utils'
 
 interface Stats {
   activeJobs: number
   hoursThisWeek: number
   billableMTD: number
-  squareUnpaid: number
+  invoicesOutstanding: number
 }
 
 export default function StatCards() {
@@ -27,7 +27,7 @@ export default function StatCards() {
     { label: 'Active Jobs', value: stats ? stats.activeJobs.toString() : '—', icon: Briefcase, color: 'text-emerald-400', bg: 'bg-emerald-500/10', sub: 'currently in progress' },
     { label: 'Hours This Week', value: stats ? formatHours(stats.hoursThisWeek) : '—', icon: Clock, color: 'text-blue-400', bg: 'bg-blue-500/10', sub: 'Mon–Sun' },
     { label: 'Billable MTD', value: stats ? formatCurrency(stats.billableMTD) : '—', icon: DollarSign, color: 'text-violet-400', bg: 'bg-violet-500/10', sub: month },
-    { label: 'Square Unpaid', value: stats ? formatCurrency(stats.squareUnpaid) : '—', icon: CreditCard, color: 'text-amber-400', bg: 'bg-amber-500/10', sub: 'outstanding invoices' },
+    { label: 'Outstanding', value: stats ? formatCurrency(stats.invoicesOutstanding) : '—', icon: FileText, color: 'text-amber-400', bg: 'bg-amber-500/10', sub: 'unpaid invoices' },
   ]
 
   return (

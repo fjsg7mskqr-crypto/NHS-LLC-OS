@@ -27,9 +27,10 @@ export async function GET() {
       .lte('start_time', `${monthEnd}T23:59:59`)
       .eq('billable', true),
     supabase
-      .from('square_invoices')
-      .select('amount_due')
-      .in('status', ['unpaid', 'overdue', 'draft']),
+      .from('invoices')
+      .select('total')
+      .is('deleted_at', null)
+      .in('status', ['sent', 'overdue']),
   ])
 
   const hoursThisWeek = (weekEntriesRes.data || []).reduce(
@@ -40,14 +41,14 @@ export async function GET() {
     (sum, e) => sum + (e.billable_amount || 0), 0
   )
 
-  const squareUnpaid = (invoicesRes.data || []).reduce(
-    (sum, i) => sum + (i.amount_due || 0), 0
+  const invoicesOutstanding = (invoicesRes.data || []).reduce(
+    (sum, i) => sum + (i.total || 0), 0
   )
 
   return Response.json({
     activeJobs: jobsRes.count ?? 0,
     hoursThisWeek: Math.round(hoursThisWeek * 10) / 10,
     billableMTD,
-    squareUnpaid,
+    invoicesOutstanding,
   })
 }

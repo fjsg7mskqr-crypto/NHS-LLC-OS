@@ -16,10 +16,16 @@ export default function InvoicesList({ onSelect }: { onSelect: (id: string) => v
   const [sortDir, setSortDir] = useState<SortDir>('desc')
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [clients, setClients] = useState<Client[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('/api/invoices').then(r => r.json()).then(data => setInvoices(data || [])).catch(() => {})
-    fetch('/api/clients').then(r => r.json()).then(data => setClients(data || [])).catch(() => {})
+    Promise.all([
+      fetch('/api/invoices').then(r => r.json()),
+      fetch('/api/clients').then(r => r.json()),
+    ]).then(([inv, cli]) => {
+      setInvoices(inv || [])
+      setClients(cli || [])
+    }).catch(() => {}).finally(() => setLoading(false))
   }, [])
 
   const filtered = invoices
@@ -154,7 +160,10 @@ export default function InvoicesList({ onSelect }: { onSelect: (id: string) => v
             ))}
           </tbody>
         </table>
-        {filtered.length === 0 && (
+        {loading && (
+          <div className="py-12 text-center text-slate-500 text-sm">Loading invoices...</div>
+        )}
+        {!loading && filtered.length === 0 && (
           <div className="py-12 text-center text-slate-500 text-sm">No invoices match your filters</div>
         )}
       </div>

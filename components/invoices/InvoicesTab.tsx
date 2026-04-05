@@ -13,12 +13,15 @@ export default function InvoicesTab() {
   const [showCreate, setShowCreate] = useState(false)
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [listKey, setListKey] = useState(0)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    setLoading(true)
     fetch('/api/invoices')
       .then(r => r.json())
       .then((data: Invoice[]) => setInvoices(data || []))
       .catch(() => {})
+      .finally(() => setLoading(false))
   }, [listKey])
 
   const now = new Date()
@@ -55,7 +58,7 @@ export default function InvoicesTab() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-white">Invoices</h1>
-          <p className="text-sm text-slate-500">{invoices.length} total</p>
+          <p className="text-sm text-slate-500">{loading ? 'Loading...' : `${invoices.length} total`}</p>
         </div>
         <button
           onClick={() => setShowCreate(true)}
