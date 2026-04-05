@@ -13,11 +13,11 @@ interface TaskRow {
   job: { title: string } | null
 }
 
-export default function TasksDue() {
+export default function TasksDue({ limit = 6 }: { limit?: number }) {
   const [upcoming, setUpcoming] = useState<TaskRow[]>([])
 
   useEffect(() => {
-    fetch('/api/tasks?limit=6')
+    fetch(`/api/tasks?limit=${limit}`)
       .then(r => r.json())
       .then(data => setUpcoming(data || []))
       .catch(() => {})

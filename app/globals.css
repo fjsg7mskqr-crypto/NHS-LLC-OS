@@ -151,3 +151,18 @@ body > * { position: relative; z-index: 1; }
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-6px); }
 }
+
+/* Bottom nav active indicator */
+.bottom-nav-active {
+  position: relative;
+}
+.bottom-nav-active::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 25%;
+  right: 25%;
+  height: 2px;
+  background: #10b981;
+  border-radius: 0 0 2px 2px;
+}

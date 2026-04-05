@@ -1,77 +1,52 @@
 'use client'
 
-import { useState } from 'react'
-import { LayoutDashboard, Clock, Briefcase, FileText, Users, Wrench, CalendarDays, BarChart3, ListTodo } from 'lucide-react'
-import clsx from 'clsx'
-import OverviewTab from '@/components/overview/OverviewTab'
-import TimeTab from '@/components/time/TimeTab'
-import JobsTab from '@/components/jobs/JobsTab'
-import InvoicesTab from '@/components/invoices/InvoicesTab'
-import ClientsTab from '@/components/clients/ClientsTab'
-import EquipmentTab from '@/components/equipment/EquipmentTab'
-import CalendarTab from '@/components/calendar/CalendarTab'
-import ReportsTab from '@/components/reports/ReportsTab'
-import TasksTab from '@/components/tasks/TasksTab'
+import { Suspense, useState, useCallback } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
+import SectionNav, { SECTIONS, type SectionId } from '@/components/layout/SectionNav'
+import TodaySection from '@/components/sections/TodaySection'
+import WorkSection from '@/components/sections/WorkSection'
+import MoneySection from '@/components/sections/MoneySection'
+import MoreSection from '@/components/sections/MoreSection'
 
-const TABS = [
-  { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-  { id: 'time', label: 'Time', icon: Clock },
-  { id: 'jobs', label: 'Jobs', icon: Briefcase },
-  { id: 'invoices', label: 'Invoices', icon: FileText },
-  { id: 'clients', label: 'Clients', icon: Users },
-  { id: 'equipment', label: 'Equipment', icon: Wrench },
-  { id: 'calendar', label: 'Calendar', icon: CalendarDays },
-  { id: 'tasks', label: 'Tasks', icon: ListTodo },
-  { id: 'reports', label: 'Reports', icon: BarChart3 },
-] as const
+const VALID_SECTIONS = new Set<string>(SECTIONS.map(s => s.id))
 
-type TabId = (typeof TABS)[number]['id']
+function DashboardContent() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
 
-export default function DashboardPage() {
-  const [activeTab, setActiveTab] = useState<TabId>('overview')
+  const initial = searchParams.get('section')
+  const [activeSection, setActiveSection] = useState<SectionId>(
+    VALID_SECTIONS.has(initial ?? '') ? (initial as SectionId) : 'today'
+  )
+
+  const handleSectionChange = useCallback(
+    (id: SectionId) => {
+      setActiveSection(id)
+      router.replace(`/dashboard?section=${id}`, { scroll: false })
+    },
+    [router]
+  )
 
   return (
     <div className="flex flex-col min-h-full">
-      {/* Tab Navigation */}
-      <div className="sticky top-0 z-10 bg-[#0a0f1a]/95 backdrop-blur border-b border-slate-800">
-        <div className="max-w-screen-xl mx-auto px-4 sm:px-6">
-          <nav className="flex gap-1">
-            {TABS.map(tab => {
-              const Icon = tab.icon
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={clsx(
-                    'flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors',
-                    activeTab === tab.id
-                      ? 'border-emerald-500 text-emerald-400'
-                      : 'border-transparent text-slate-400 hover:text-slate-200 hover:border-slate-600'
-                  )}
-                >
-                  <Icon className="w-4 h-4" />
-                  {tab.label}
-                </button>
-              )
-            })}
-          </nav>
-        </div>
-      </div>
+      <SectionNav activeSection={activeSection} onSectionChange={handleSectionChange} />
 
-      {/* Tab Content */}
-      <div className="flex-1 max-w-screen-xl mx-auto w-full px-4 sm:px-6 py-6">
-        <div className="tab-content" key={activeTab}>
-          {activeTab === 'overview' && <OverviewTab />}
-          {activeTab === 'time' && <TimeTab />}
-          {activeTab === 'jobs' && <JobsTab />}
-          {activeTab === 'invoices' && <InvoicesTab />}
-          {activeTab === 'clients' && <ClientsTab />}
-          {activeTab === 'equipment' && <EquipmentTab />}
-          {activeTab === 'calendar' && <CalendarTab />}
-          {activeTab === 'tasks' && <TasksTab />}
-          {activeTab === 'reports' && <ReportsTab />}
+      <div className="flex-1 max-w-screen-xl mx-auto w-full px-4 sm:px-6 py-6 pb-24 lg:pb-6">
+        <div className="tab-content" key={activeSection}>
+          {activeSection === 'today' && <TodaySection />}
+          {activeSection === 'work' && <WorkSection />}
+          {activeSection === 'money' && <MoneySection />}
+          {activeSection === 'more' && <MoreSection />}
         </div>
       </div>
     </div>
+  )
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<div className="flex-1" />}>
+      <DashboardContent />
+    </Suspense>
   )
 }
