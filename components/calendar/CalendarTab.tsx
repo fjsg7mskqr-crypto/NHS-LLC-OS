@@ -10,9 +10,17 @@ const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'Ju
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 function blockColor(type: string) {
-  return type === 'sbr_booking'
-    ? 'bg-violet-500/30 border-violet-500/50 text-violet-300'
-    : 'bg-emerald-500/30 border-emerald-500/50 text-emerald-300'
+  switch (type) {
+    case 'booking': return 'bg-violet-500/30 border-violet-500/50 text-violet-300'
+    case 'unavailable': return 'bg-red-500/30 border-red-500/50 text-red-300'
+    default: return 'bg-emerald-500/30 border-emerald-500/50 text-emerald-300'
+  }
+}
+
+const BLOCK_LABELS: Record<string, string> = {
+  booking: 'Booking',
+  job_day: 'Job Day',
+  unavailable: 'Unavailable',
 }
 
 function jobColor(status: string) {
@@ -129,8 +137,8 @@ export default function CalendarTab() {
           <p className="text-lg font-semibold text-amber-400 glow-amber">{jobs.filter(j => j.status === 'in_progress').length}</p>
         </div>
         <div className="metric-card metric-card--violet rounded-xl border border-slate-800 bg-slate-900/50 p-4">
-          <p className="text-xs text-slate-500 mb-1">SBR Bookings</p>
-          <p className="text-lg font-semibold text-violet-400 glow-violet">{blocks.filter(b => b.type === 'sbr_booking').length}</p>
+          <p className="text-xs text-slate-500 mb-1">Bookings</p>
+          <p className="text-lg font-semibold text-violet-400 glow-violet">{blocks.filter(b => b.type === 'booking').length}</p>
         </div>
       </div>
 
@@ -168,7 +176,7 @@ export default function CalendarTab() {
                   <div className="mt-1 space-y-0.5">
                     {dayBlocks.slice(0, 2).map(b => (
                       <div key={b.id} className={`text-[10px] px-1.5 py-0.5 rounded border truncate ${blockColor(b.type)}`}>
-                        {b.type === 'sbr_booking' ? 'SBR' : 'Job'}{b.property ? `: ${b.property.name}` : ''}
+                        {BLOCK_LABELS[b.type] || b.type}{b.property ? `: ${b.property.name}` : ''}
                       </div>
                     ))}
                     {dayJobs.slice(0, 2).map(j => (
@@ -197,7 +205,7 @@ export default function CalendarTab() {
             )}
             {selectedBlocks.map(b => (
               <div key={b.id} className={`rounded-lg border p-3 ${blockColor(b.type)}`}>
-                <p className="text-xs font-medium">{b.type === 'sbr_booking' ? 'SBR Booking' : 'Job Day'}</p>
+                <p className="text-xs font-medium">{BLOCK_LABELS[b.type] || b.type}</p>
                 {b.property && <p className="text-xs mt-1 opacity-80">{b.property.name}</p>}
                 {b.notes && <p className="text-xs mt-1 opacity-70">{b.notes}</p>}
                 <p className="text-[10px] mt-1 opacity-60">{b.start_date} - {b.end_date}</p>

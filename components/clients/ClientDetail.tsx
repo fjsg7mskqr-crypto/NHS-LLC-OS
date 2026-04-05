@@ -37,9 +37,11 @@ export default function ClientDetail({
 
   const [editForm, setEditForm] = useState({
     name: client.name,
+    contact_name: client.contact_name || '',
     email: client.email || '',
     phone: client.phone || '',
     default_hourly_rate: String(client.default_hourly_rate),
+    billable_drive_time: client.billable_drive_time ?? false,
     notes: client.notes || '',
   })
 
@@ -80,9 +82,11 @@ export default function ClientDetail({
         body: JSON.stringify({
           id: client.id,
           name: editForm.name.trim(),
+          contact_name: editForm.contact_name || null,
           email: editForm.email || null,
           phone: editForm.phone || null,
           default_hourly_rate: Number(editForm.default_hourly_rate) || 0,
+          billable_drive_time: editForm.billable_drive_time,
           notes: editForm.notes || null,
         }),
       })
@@ -126,9 +130,15 @@ export default function ClientDetail({
         {error && <ErrorBanner message={error} onDismiss={() => setError(null)} />}
 
         <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-5 space-y-4">
-          <div>
-            <label className="block text-xs text-slate-500 mb-1">Name *</label>
-            <input type="text" value={editForm.name} onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))} className={inputClass} />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs text-slate-500 mb-1">Name *</label>
+              <input type="text" value={editForm.name} onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))} className={inputClass} />
+            </div>
+            <div>
+              <label className="block text-xs text-slate-500 mb-1">Contact Name</label>
+              <input type="text" value={editForm.contact_name} onChange={e => setEditForm(f => ({ ...f, contact_name: e.target.value }))} placeholder="Who you deal with" className={inputClass} />
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -140,9 +150,17 @@ export default function ClientDetail({
               <input type="tel" value={editForm.phone} onChange={e => setEditForm(f => ({ ...f, phone: e.target.value }))} className={inputClass} />
             </div>
           </div>
-          <div>
-            <label className="block text-xs text-slate-500 mb-1">Default Hourly Rate</label>
-            <input type="number" value={editForm.default_hourly_rate} onChange={e => setEditForm(f => ({ ...f, default_hourly_rate: e.target.value }))} min="0" step="0.01" className={inputClass} />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs text-slate-500 mb-1">Default Hourly Rate</label>
+              <input type="number" value={editForm.default_hourly_rate} onChange={e => setEditForm(f => ({ ...f, default_hourly_rate: e.target.value }))} min="0" step="0.01" className={inputClass} />
+            </div>
+            <div className="flex items-end">
+              <label className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-800/50 border border-slate-700 cursor-pointer hover:border-slate-600 transition-colors w-full">
+                <input type="checkbox" checked={editForm.billable_drive_time} onChange={e => setEditForm(f => ({ ...f, billable_drive_time: e.target.checked }))} className="rounded border-slate-600 bg-slate-700 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-0" />
+                <span className="text-sm text-slate-300">Bill drive time</span>
+              </label>
+            </div>
           </div>
           <div>
             <label className="block text-xs text-slate-500 mb-1">Notes</label>

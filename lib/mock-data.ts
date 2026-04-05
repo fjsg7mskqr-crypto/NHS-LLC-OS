@@ -5,22 +5,22 @@ import type {
 export const MOCK_CLIENTS: Client[] = [
   {
     id: 'c1', name: 'Miller Family', email: 'tom@millerfamily.com',
-    phone: '(406) 555-0112', default_hourly_rate: 85,
+    phone: '(406) 555-0112', default_hourly_rate: 85, billable_drive_time: false,
     notes: 'Tom & Sarah. Prefer morning appointments.', created_at: '2025-03-15T00:00:00Z',
   },
   {
     id: 'c2', name: 'Lakeside Properties LLC', email: 'erik@lakesideprops.com',
-    phone: '(406) 555-0234', default_hourly_rate: 75,
+    phone: '(406) 555-0234', default_hourly_rate: 75, billable_drive_time: true,
     notes: 'Managed by Erik. Two properties: Lodge and Den.', created_at: '2025-01-10T00:00:00Z',
   },
   {
     id: 'c3', name: 'Mountain View Estate', email: 'contact@mountainviewmt.com',
-    phone: '(406) 555-0378', default_hourly_rate: 95,
+    phone: '(406) 555-0378', default_hourly_rate: 95, billable_drive_time: false,
     notes: 'Anderson family. Seasonal opening/closing each year.', created_at: '2025-04-20T00:00:00Z',
   },
   {
     id: 'c4', name: 'Johnson Residence', email: 'mark.johnson@gmail.com',
-    phone: '(406) 555-0491', default_hourly_rate: 80,
+    phone: '(406) 555-0491', default_hourly_rate: 80, billable_drive_time: false,
     notes: 'Mark & Lisa. Bi-weekly maintenance.', created_at: '2025-06-01T00:00:00Z',
   },
 ]
@@ -88,10 +88,10 @@ export const MOCK_TASKS: Task[] = [
 ]
 
 export const MOCK_CALENDAR_BLOCKS: CalendarBlock[] = [
-  { id: 'cb1', property_id: 'p2', start_date: '2026-04-05', end_date: '2026-04-08', type: 'sbr_booking', notes: 'Hendersons' },
-  { id: 'cb2', property_id: 'p2', start_date: '2026-04-12', end_date: '2026-04-15', type: 'sbr_booking', notes: 'Williams family' },
-  { id: 'cb3', property_id: 'p3', start_date: '2026-04-06', end_date: '2026-04-07', type: 'sbr_booking', notes: 'Martin' },
-  { id: 'cb4', property_id: 'p5', start_date: '2026-04-10', end_date: '2026-04-14', type: 'sbr_booking', notes: 'Anderson cousins' },
+  { id: 'cb1', property_id: 'p2', start_date: '2026-04-05', end_date: '2026-04-08', type: 'booking', notes: 'Hendersons' },
+  { id: 'cb2', property_id: 'p2', start_date: '2026-04-12', end_date: '2026-04-15', type: 'booking', notes: 'Williams family' },
+  { id: 'cb3', property_id: 'p3', start_date: '2026-04-06', end_date: '2026-04-07', type: 'booking', notes: 'Martin' },
+  { id: 'cb4', property_id: 'p5', start_date: '2026-04-10', end_date: '2026-04-14', type: 'booking', notes: 'Anderson cousins' },
   { id: 'cb5', property_id: 'p4', start_date: '2026-04-07', end_date: '2026-04-07', type: 'job_day', notes: 'Mountain View opening cont.' },
   { id: 'cb6', property_id: 'p2', start_date: '2026-04-04', end_date: '2026-04-04', type: 'job_day', notes: 'Deck stain final coat' },
   { id: 'cb7', property_id: 'p1', start_date: '2026-04-09', end_date: '2026-04-09', type: 'job_day', notes: 'Miller irrigation timers' },

@@ -42,10 +42,13 @@ export const POST = withAuthenticatedRoute(async function POST(request: NextRequ
     .from('clients')
     .insert({
       name: body.name.trim(),
+      contact_name: body.contact_name || null,
       email: body.email || null,
       phone: body.phone || null,
       default_hourly_rate: body.default_hourly_rate ?? 0,
+      billable_drive_time: body.billable_drive_time ?? false,
       notes: body.notes || null,
+      square_customer_id: body.square_customer_id || null,
     })
     .select('*')
     .single()

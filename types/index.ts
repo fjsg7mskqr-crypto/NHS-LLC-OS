@@ -2,17 +2,36 @@ export type CategoryType = 'client_work' | 'drive_time' | 'errand' | 'prep' | 'a
 export type JobStatus = 'scheduled' | 'in_progress' | 'active' | 'complete' | 'cancelled'
 export type Priority = 'high' | 'medium' | 'low'
 export type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled'
-export type CalendarBlockType = 'sbr_booking' | 'job_day'
+export type CalendarBlockType = 'booking' | 'job_day' | 'unavailable'
 
 export interface Client {
   id: string
   name: string
+  contact_name?: string
   email?: string
   phone?: string
   default_hourly_rate: number
+  billable_drive_time: boolean
   notes?: string
+  square_customer_id?: string
   created_at: string
   deleted_at?: string
+}
+
+export interface SquareInvoice {
+  square_id: string
+  client_id?: string
+  job_id?: string
+  status: string
+  total_amount: number
+  amount_paid: number
+  amount_due: number
+  issued_date?: string
+  due_date?: string
+  paid_date?: string
+  last_synced_at: string
+  client?: Client
+  job?: Job
 }
 
 export interface Property {

@@ -96,7 +96,8 @@ export default function CreateBlockModal({
             <label htmlFor="block-type" className="block text-xs text-slate-500 mb-1">Type *</label>
             <select id="block-type" value={form.type} onChange={e => set('type', e.target.value)} className={inputClass}>
               <option value="job_day">Job Day</option>
-              <option value="sbr_booking">SBR Booking</option>
+              <option value="booking">Booking</option>
+              <option value="unavailable">Unavailable</option>
             </select>
           </div>
           <div>

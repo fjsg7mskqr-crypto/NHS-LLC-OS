@@ -80,7 +80,7 @@ export default function MiniCalendar() {
         </div>
         <div className="flex gap-4 mt-3 pt-3 border-t border-slate-800">
           <div className="flex items-center gap-1.5 text-xs text-slate-500"><div className="w-2 h-2 rounded-full bg-emerald-400" />Job day</div>
-          <div className="flex items-center gap-1.5 text-xs text-slate-500"><div className="w-2 h-2 rounded-full bg-orange-400" />SBR booking</div>
+          <div className="flex items-center gap-1.5 text-xs text-slate-500"><div className="w-2 h-2 rounded-full bg-orange-400" />Booking</div>
         </div>
       </div>
     </div>

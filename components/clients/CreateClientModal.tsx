@@ -6,9 +6,11 @@ import ErrorBanner from '@/components/ui/ErrorBanner'
 
 interface ClientForm {
   name: string
+  contact_name: string
   email: string
   phone: string
   default_hourly_rate: string
+  billable_drive_time: boolean
   notes: string
 }
 
@@ -22,9 +24,11 @@ export default function CreateClientModal({
   const titleId = useId()
   const [form, setForm] = useState<ClientForm>({
     name: '',
+    contact_name: '',
     email: '',
     phone: '',
     default_hourly_rate: '',
+    billable_drive_time: false,
     notes: '',
   })
   const [saving, setSaving] = useState(false)
@@ -53,9 +57,11 @@ export default function CreateClientModal({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: form.name.trim(),
+          contact_name: form.contact_name || null,
           email: form.email || null,
           phone: form.phone || null,
           default_hourly_rate: Number(form.default_hourly_rate) || 0,
+          billable_drive_time: form.billable_drive_time,
           notes: form.notes || null,
         }),
       })
@@ -94,9 +100,15 @@ export default function CreateClientModal({
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
           {error && <ErrorBanner message={error} onDismiss={() => setError(null)} />}
 
-          <div>
-            <label htmlFor="client-name" className="block text-xs text-slate-500 mb-1">Name *</label>
-            <input id="client-name" type="text" value={form.name} onChange={e => set('name', e.target.value)} required placeholder="Client name" className={inputClass} />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label htmlFor="client-name" className="block text-xs text-slate-500 mb-1">Name *</label>
+              <input id="client-name" type="text" value={form.name} onChange={e => set('name', e.target.value)} required placeholder="Client or company name" className={inputClass} />
+            </div>
+            <div>
+              <label htmlFor="client-contact" className="block text-xs text-slate-500 mb-1">Contact Name</label>
+              <input id="client-contact" type="text" value={form.contact_name} onChange={e => set('contact_name', e.target.value)} placeholder="Who you deal with" className={inputClass} />
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -108,9 +120,17 @@ export default function CreateClientModal({
               <input id="client-phone" type="tel" value={form.phone} onChange={e => set('phone', e.target.value)} placeholder="(406) 555-0100" className={inputClass} />
             </div>
           </div>
-          <div>
-            <label htmlFor="client-rate" className="block text-xs text-slate-500 mb-1">Default Hourly Rate</label>
-            <input id="client-rate" type="number" value={form.default_hourly_rate} onChange={e => set('default_hourly_rate', e.target.value)} min="0" step="0.01" placeholder="0.00" className={inputClass} />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label htmlFor="client-rate" className="block text-xs text-slate-500 mb-1">Default Hourly Rate</label>
+              <input id="client-rate" type="number" value={form.default_hourly_rate} onChange={e => set('default_hourly_rate', e.target.value)} min="0" step="0.01" placeholder="0.00" className={inputClass} />
+            </div>
+            <div className="flex items-end">
+              <label className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-800/50 border border-slate-700 cursor-pointer hover:border-slate-600 transition-colors w-full">
+                <input type="checkbox" checked={form.billable_drive_time} onChange={e => setForm(prev => ({ ...prev, billable_drive_time: e.target.checked }))} className="rounded border-slate-600 bg-slate-700 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-0" />
+                <span className="text-sm text-slate-300">Bill drive time</span>
+              </label>
+            </div>
           </div>
           <div>
             <label htmlFor="client-notes" className="block text-xs text-slate-500 mb-1">Notes</label>
