@@ -1,6 +1,8 @@
+import { type NextRequest } from 'next/server'
+import { withAuthenticatedRoute } from '@/lib/auth'
 import { createServerClient } from '@/lib/supabase-server'
 
-export async function POST(request: Request) {
+export const POST = withAuthenticatedRoute(async function POST(request: NextRequest) {
   const supabase = createServerClient()
   const body = await request.json()
 
@@ -34,4 +36,4 @@ export async function POST(request: Request) {
 
   if (error) return Response.json({ error: error.message }, { status: 500 })
   return Response.json(data, { status: 201 })
-}
+})

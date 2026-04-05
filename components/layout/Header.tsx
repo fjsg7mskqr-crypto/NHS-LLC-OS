@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { format } from 'date-fns'
-import { Activity, Wifi, WifiOff } from 'lucide-react'
+import { Activity, LogOut, Wifi, WifiOff } from 'lucide-react'
 import { isSupabaseConfigured } from '@/lib/supabase'
 
 function getStoredClockStart(): Date | null {
@@ -19,7 +19,11 @@ function getStoredClockStart(): Date | null {
   }
 }
 
-export default function Header() {
+type HeaderProps = {
+  userEmail: string | null
+}
+
+export default function Header({ userEmail }: HeaderProps) {
   const [now, setNow] = useState(new Date())
   const [clockStart, setClockStart] = useState<Date | null>(() => getStoredClockStart())
   const [clockedIn, setClockedIn] = useState(() => getStoredClockStart() !== null)
@@ -70,6 +74,9 @@ export default function Header() {
         </span>
 
         <div className="flex items-center gap-3">
+          {userEmail ? (
+            <span className="hidden md:block text-xs text-slate-400">{userEmail}</span>
+          ) : null}
           {isSupabaseConfigured ? (
             <span className="hidden sm:flex items-center gap-1.5 text-xs text-emerald-400">
               <Wifi className="w-3.5 h-3.5" /> Live
@@ -91,6 +98,15 @@ export default function Header() {
               <span className="text-xs text-slate-500">Not clocked in</span>
             </div>
           )}
+          <form action="/auth/logout" method="post">
+            <button
+              type="submit"
+              className="flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-slate-300 transition hover:border-slate-600 hover:text-white"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              Sign out
+            </button>
+          </form>
         </div>
       </div>
     </header>

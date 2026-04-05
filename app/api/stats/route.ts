@@ -1,7 +1,8 @@
+import { withAuthenticatedRoute } from '@/lib/auth'
 import { createServerClient } from '@/lib/supabase-server'
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, format } from 'date-fns'
 
-export async function GET() {
+export const GET = withAuthenticatedRoute(async function GET() {
   const supabase = createServerClient()
   const now = new Date()
 
@@ -51,4 +52,4 @@ export async function GET() {
     billableMTD,
     invoicesOutstanding,
   })
-}
+})

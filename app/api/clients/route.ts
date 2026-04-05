@@ -1,7 +1,8 @@
 import { type NextRequest } from 'next/server'
+import { withAuthenticatedRoute } from '@/lib/auth'
 import { createServerClient } from '@/lib/supabase-server'
 
-export async function GET(request: NextRequest) {
+export const GET = withAuthenticatedRoute(async function GET(request: NextRequest) {
   const supabase = createServerClient()
   const id = request.nextUrl.searchParams.get('id')
 
@@ -24,9 +25,9 @@ export async function GET(request: NextRequest) {
 
   if (error) return Response.json({ error: error.message }, { status: 500 })
   return Response.json(data)
-}
+})
 
-export async function POST(request: NextRequest) {
+export const POST = withAuthenticatedRoute(async function POST(request: NextRequest) {
   const supabase = createServerClient()
   const body = await request.json()
 
@@ -51,9 +52,9 @@ export async function POST(request: NextRequest) {
 
   if (error) return Response.json({ error: error.message }, { status: 500 })
   return Response.json(data, { status: 201 })
-}
+})
 
-export async function PATCH(request: NextRequest) {
+export const PATCH = withAuthenticatedRoute(async function PATCH(request: NextRequest) {
   const supabase = createServerClient()
   const body = await request.json()
   const { id, ...updates } = body
@@ -80,9 +81,9 @@ export async function PATCH(request: NextRequest) {
 
   if (error) return Response.json({ error: error.message }, { status: 500 })
   return Response.json(data)
-}
+})
 
-export async function DELETE(request: NextRequest) {
+export const DELETE = withAuthenticatedRoute(async function DELETE(request: NextRequest) {
   const supabase = createServerClient()
   const id = request.nextUrl.searchParams.get('id')
 
@@ -100,4 +101,4 @@ export async function DELETE(request: NextRequest) {
   const firstError = clientRes.error || jobsRes.error || tasksRes.error
   if (firstError) return Response.json({ error: firstError.message }, { status: 500 })
   return Response.json({ success: true })
-}
+})
