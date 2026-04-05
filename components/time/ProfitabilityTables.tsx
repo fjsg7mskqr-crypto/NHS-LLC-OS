@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { AlertTriangle, TrendingUp } from 'lucide-react'
 import { formatCurrency, formatHours } from '@/lib/utils'
+import type { Job } from '@/types'
 
 interface JobProfit {
   id: string; title: string; client_name: string; target_rate: number
@@ -18,7 +19,7 @@ export default function ProfitabilityTables() {
   useEffect(() => {
     fetch('/api/jobs')
       .then(r => r.json())
-      .then((allJobs: any[]) => {
+      .then((allJobs: Job[]) => {
         // Compute profitability client-side from jobs (time entries not yet joined here — show target rate)
         const computed = (allJobs || [])
           .filter(j => j.status !== 'cancelled')

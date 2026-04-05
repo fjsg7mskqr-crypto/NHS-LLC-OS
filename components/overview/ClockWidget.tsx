@@ -7,13 +7,26 @@ import type { CategoryType, ClockSession, Client, Job } from '@/types'
 
 const CATEGORIES: CategoryType[] = ['client_work', 'drive_time', 'errand', 'prep', 'admin', 'equipment_maint']
 
+function getStoredClockSession(): ClockSession | null {
+  if (typeof window === 'undefined') return null
+
+  const stored = localStorage.getItem('nhs_clock_session')
+  if (!stored) return null
+
+  try {
+    return JSON.parse(stored) as ClockSession
+  } catch {
+    return null
+  }
+}
+
 export default function ClockWidget() {
-  const [clockedIn, setClockedIn] = useState(false)
-  const [session, setSession] = useState<ClockSession | null>(null)
+  const [session, setSession] = useState<ClockSession | null>(() => getStoredClockSession())
+  const [clockedIn, setClockedIn] = useState(() => getStoredClockSession() !== null)
   const [elapsed, setElapsed] = useState('00:00:00')
-  const [category, setCategory] = useState<CategoryType>('client_work')
-  const [clientId, setClientId] = useState('')
-  const [jobId, setJobId] = useState('')
+  const [category, setCategory] = useState<CategoryType>(() => getStoredClockSession()?.category || 'client_work')
+  const [clientId, setClientId] = useState(() => getStoredClockSession()?.clientId || '')
+  const [jobId, setJobId] = useState(() => getStoredClockSession()?.jobId || '')
   const [clients, setClients] = useState<Client[]>([])
   const [jobs, setJobs] = useState<Job[]>([])
   const [saving, setSaving] = useState(false)
@@ -21,23 +34,10 @@ export default function ClockWidget() {
   useEffect(() => {
     fetch('/api/clients').then(r => r.json()).then(data => {
       setClients(data || [])
-      if (data?.length > 0 && !clientId) setClientId(data[0].id)
     }).catch(() => {})
     fetch('/api/jobs?status=in_progress').then(r => r.json()).then(data => {
       setJobs(data || [])
     }).catch(() => {})
-  }, [])
-
-  useEffect(() => {
-    const stored = localStorage.getItem('nhs_clock_session')
-    if (stored) {
-      const s: ClockSession = JSON.parse(stored)
-      setSession(s)
-      setClockedIn(true)
-      setCategory(s.category)
-      setClientId(s.clientId)
-      setJobId(s.jobId)
-    }
   }, [])
 
   useEffect(() => {

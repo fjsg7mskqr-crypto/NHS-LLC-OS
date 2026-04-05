@@ -3,18 +3,20 @@
 import { useEffect, useState } from 'react'
 import { ArrowLeft, MapPin, Clock, DollarSign, CheckCircle, ExternalLink } from 'lucide-react'
 import { formatCurrency, formatHours, formatMinutes, statusColor, CATEGORY_COLORS, CATEGORY_LABELS } from '@/lib/utils'
-import type { Job, CategoryType } from '@/types'
+import type { Job, CategoryType, SquareInvoice, TimeEntry } from '@/types'
 
 export default function JobDetail({ job, onBack }: { job: Job; onBack: () => void }) {
-  const [entries, setEntries] = useState<any[]>([])
-  const [invoice, setInvoice] = useState<any>(null)
+  const [entries, setEntries] = useState<TimeEntry[]>([])
+  const [invoice, setInvoice] = useState<SquareInvoice | null>(null)
 
   useEffect(() => {
     fetch(`/api/time-entries?job_id=${job.id}`)
-      .then(r => r.json()).then(d => setEntries((d || []).sort((a: any, b: any) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime())))
+      .then(r => r.json()).then((data: TimeEntry[]) => {
+        setEntries((data || []).sort((a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime()))
+      })
       .catch(() => {})
     if (job.square_invoice_id) {
-      fetch('/api/square-invoices').then(r => r.json()).then((invs: any[]) => {
+      fetch('/api/square-invoices').then(r => r.json()).then((invs: SquareInvoice[]) => {
         setInvoice((invs || []).find(i => i.square_id === job.square_invoice_id) || null)
       }).catch(() => {})
     }
@@ -25,8 +27,8 @@ export default function JobDetail({ job, onBack }: { job: Job; onBack: () => voi
   const billedAmount = entries.filter(e => e.billable).reduce((s, e) => s + (e.billable_amount || 0), 0)
   const effectiveRate = billableMinutes > 0 ? billedAmount / (billableMinutes / 60) : 0
 
-  const client = (job as any).client
-  const property = (job as any).property
+  const client = job.client
+  const property = job.property
 
   const invoiceStatusColor: Record<string, string> = {
     paid: 'text-emerald-400 bg-emerald-500/15 border-emerald-500/30',
@@ -75,7 +77,7 @@ export default function JobDetail({ job, onBack }: { job: Job; onBack: () => voi
         <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
           <p className="text-xs text-slate-500 mb-1 flex items-center gap-1"><DollarSign className="w-3 h-3" />Value</p>
           <p className="text-sm font-medium text-emerald-400">{billedAmount > 0 ? formatCurrency(billedAmount) : '—'}</p>
-          <p className="text-xs text-slate-500 mt-0.5">{effectiveRate > 0 ? `$${effectiveRate.toFixed(0)}/hr eff.` : `$${(job as any).hourly_rate || '—'}/hr target`}</p>
+          <p className="text-xs text-slate-500 mt-0.5">{effectiveRate > 0 ? `$${effectiveRate.toFixed(0)}/hr eff.` : `$${job.hourly_rate || '—'}/hr target`}</p>
         </div>
       </div>
       {invoice && (
@@ -83,7 +85,7 @@ export default function JobDetail({ job, onBack }: { job: Job; onBack: () => voi
           <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2"><ExternalLink className="w-4 h-4 text-slate-400" />Linked Square Invoice</h3>
           <div className="flex flex-wrap items-center gap-6">
             <div><p className="text-xs text-slate-500">Invoice ID</p><p className="text-sm font-mono text-slate-300">{invoice.square_id}</p></div>
-            <div><p className="text-xs text-slate-500">Total</p><p className="text-sm font-medium text-white">{formatCurrency(invoice.total_amount)}</p></div>
+            <div><p className="text-xs text-slate-500">Total</p><p className="text-sm font-medium text-white">{formatCurrency(invoice.total_amount || 0)}</p></div>
             <div><p className="text-xs text-slate-500">Paid</p><p className="text-sm font-medium text-emerald-400">{formatCurrency(invoice.amount_paid)}</p></div>
             <div><p className="text-xs text-slate-500">Due</p><p className="text-sm text-slate-300">{invoice.due_date || '—'}</p></div>
             <div><p className="text-xs text-slate-500">Status</p><span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${invoiceStatusColor[invoice.status] || ''}`}>{invoice.status}</span></div>
@@ -99,7 +101,7 @@ export default function JobDetail({ job, onBack }: { job: Job; onBack: () => voi
           <div className="py-10 text-center text-slate-500 text-sm">No time entries for this job</div>
         ) : (
           <div className="divide-y divide-slate-800/50">
-            {entries.map((entry: any) => {
+            {entries.map(entry => {
               const color = CATEGORY_COLORS[entry.category as CategoryType]
               const dateStr = new Date(entry.start_time).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
               return (

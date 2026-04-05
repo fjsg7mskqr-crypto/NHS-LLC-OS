@@ -3,21 +3,51 @@
 import { useEffect, useState } from 'react'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import { CATEGORY_COLORS, CATEGORY_LABELS, formatMinutes } from '@/lib/utils'
-import type { CategoryType } from '@/types'
+import type { TimeEntry } from '@/types'
 
 const CATEGORIES = ['client_work', 'drive_time', 'prep', 'errand', 'admin'] as const
+interface CategoryTotal {
+  name: (typeof CATEGORIES)[number]
+  label: string
+  minutes: number
+  color: string
+}
+
+function CategoryTooltip({
+  active,
+  payload,
+  totalMinutes,
+}: {
+  active?: boolean
+  payload?: Array<{ payload?: unknown }>
+  totalMinutes: number
+}) {
+  const rawData = payload?.[0]?.payload
+  if (!active || !rawData) return null
+
+  const data = rawData as CategoryTotal
+  const percent = totalMinutes > 0 ? ((data.minutes / totalMinutes) * 100).toFixed(0) : '0'
+
+  return (
+    <div className="bg-slate-900 border border-slate-700 rounded-lg p-3 shadow-xl text-xs">
+      <p className="font-medium text-white">{data.label}</p>
+      <p className="text-slate-400 mt-1">{formatMinutes(data.minutes)}</p>
+      <p className="text-slate-500">{percent}% of total</p>
+    </div>
+  )
+}
 
 export default function CategoryBreakdown({ weekStart }: { weekStart: string }) {
-  const [totals, setTotals] = useState<{ name: string; label: string; minutes: number; color: string }[]>([])
+  const [totals, setTotals] = useState<CategoryTotal[]>([])
 
   useEffect(() => {
     fetch(`/api/time-entries?week_start=${weekStart}`)
       .then(r => r.json())
-      .then((entries: any[]) => {
+      .then((entries: TimeEntry[]) => {
         const computed = CATEGORIES.map(cat => ({
           name: cat,
           label: CATEGORY_LABELS[cat],
-          minutes: (entries || []).filter(e => e.category === cat).reduce((s, e) => s + (e.duration_minutes || 0), 0),
+          minutes: (entries || []).filter(entry => entry.category === cat).reduce((sum, entry) => sum + (entry.duration_minutes || 0), 0),
           color: CATEGORY_COLORS[cat],
         })).filter(c => c.minutes > 0)
         setTotals(computed)
@@ -25,18 +55,6 @@ export default function CategoryBreakdown({ weekStart }: { weekStart: string }) 
   }, [weekStart])
 
   const totalMinutes = totals.reduce((s, c) => s + c.minutes, 0)
-
-  const CustomTooltip = ({ active, payload }: any) => {
-    if (!active || !payload?.length) return null
-    const d = payload[0].payload
-    return (
-      <div className="bg-slate-900 border border-slate-700 rounded-lg p-3 shadow-xl text-xs">
-        <p className="font-medium text-white">{d.label}</p>
-        <p className="text-slate-400 mt-1">{formatMinutes(d.minutes)}</p>
-        <p className="text-slate-500">{((d.minutes / totalMinutes) * 100).toFixed(0)}% of total</p>
-      </div>
-    )
-  }
 
   return (
     <div className="rounded-xl border border-slate-800 bg-slate-900/50 overflow-hidden">
@@ -51,7 +69,7 @@ export default function CategoryBreakdown({ weekStart }: { weekStart: string }) 
               <Pie data={totals} cx="50%" cy="50%" innerRadius={55} outerRadius={80} dataKey="minutes" strokeWidth={2} stroke="#111827">
                 {totals.map(entry => <Cell key={entry.name} fill={entry.color} />)}
               </Pie>
-              <Tooltip content={<CustomTooltip />} />
+              <Tooltip content={props => <CategoryTooltip {...props} totalMinutes={totalMinutes} />} />
             </PieChart>
           </ResponsiveContainer>
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">

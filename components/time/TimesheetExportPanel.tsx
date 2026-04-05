@@ -137,6 +137,19 @@ async function generatePDF(
   await import('jspdf-autotable')
 
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'letter' })
+  const autoTableDoc = doc as typeof doc & {
+    autoTable: (options: {
+      startY: number
+      head: string[][]
+      body: string[][]
+      theme: 'striped'
+      styles: { fontSize: number; cellPadding: number }
+      headStyles: { fillColor: number[]; textColor: number[]; fontSize: number }
+      margin: { left: number; right: number }
+      didDrawPage: () => void
+    }) => void
+    lastAutoTable: { finalY: number }
+  }
 
   const totalMinutes = entries.reduce((s, e) => s + (e.duration_minutes || 0), 0)
   const totalHours = totalMinutes / 60
@@ -234,7 +247,7 @@ async function generatePDF(
         ]
       })
 
-      ;(doc as any).autoTable({
+      autoTableDoc.autoTable({
         startY: yPos,
         head: [['Date', 'Day', 'Start', 'End', 'Duration', 'Job', 'Category', 'Bill?', 'Rate', 'Amount', 'Notes']],
         body: tableBody,
@@ -245,7 +258,7 @@ async function generatePDF(
         didDrawPage: () => {},
       })
 
-      yPos = (doc as any).lastAutoTable.finalY + 6
+      yPos = autoTableDoc.lastAutoTable.finalY + 6
     }
 
     // Client subtotal line
@@ -300,13 +313,13 @@ export default function TimesheetExportPanel() {
     return getPresetRange(preset)
   }, [preset, customStart, customEnd])
 
+  const range = getDateRange()
+  const hasValidRange = Boolean(range.start && range.end)
+
   // Preview count when filters change
   useEffect(() => {
-    const range = getDateRange()
-    if (!range.start || !range.end) {
-      setEntryCount(null)
-      return
-    }
+    if (!hasValidRange) return
+
     const qs = buildQueryParams({
       startDate: range.start,
       endDate: range.end,
@@ -315,14 +328,22 @@ export default function TimesheetExportPanel() {
       billableOnly,
       category,
     })
-    setEntryCount(null)
+
+    let cancelled = false
+
     fetch(`/api/time-entries?${qs}`)
       .then(r => r.json())
       .then(data => {
-        if (Array.isArray(data)) setEntryCount(data.length)
+        if (!cancelled && Array.isArray(data)) setEntryCount(data.length)
       })
-      .catch(() => {})
-  }, [preset, customStart, customEnd, clientId, propertyId, billableOnly, category, getDateRange])
+      .catch(() => {
+        if (!cancelled) setEntryCount(null)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [range.start, range.end, clientId, propertyId, billableOnly, category, hasValidRange])
 
   const filteredProperties = clientId
     ? properties.filter(p => p.client_id === clientId)
@@ -330,7 +351,6 @@ export default function TimesheetExportPanel() {
 
   const validateAndFetch = async (): Promise<TimeEntry[] | null> => {
     setError(null)
-    const range = getDateRange()
     if (!range.start || !range.end) {
       setError('Please select a valid date range.')
       return null
@@ -395,7 +415,7 @@ export default function TimesheetExportPanel() {
       <div className="px-5 py-4 border-b border-slate-800 flex items-center gap-2">
         <Download className="w-4 h-4 text-slate-400" />
         <h2 className="font-semibold text-white">Timesheet Export</h2>
-        {entryCount !== null && (
+        {hasValidRange && entryCount !== null && (
           <span className="ml-auto text-xs text-slate-500">
             {entryCount} {entryCount === 1 ? 'entry' : 'entries'} matched
           </span>
@@ -447,8 +467,8 @@ export default function TimesheetExportPanel() {
 
           {preset !== 'custom' && (
             <p className="text-xs text-slate-600 mt-2">
-              {format(new Date(getPresetRange(preset).start + 'T12:00:00'), 'MMM d, yyyy')} &ndash;{' '}
-              {format(new Date(getPresetRange(preset).end + 'T12:00:00'), 'MMM d, yyyy')}
+              {format(new Date(range.start + 'T12:00:00'), 'MMM d, yyyy')} &ndash;{' '}
+              {format(new Date(range.end + 'T12:00:00'), 'MMM d, yyyy')}
             </p>
           )}
         </div>

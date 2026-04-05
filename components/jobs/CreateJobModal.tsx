@@ -2,30 +2,41 @@
 
 import { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
+import type { Client, Property, JobStatus } from '@/types'
+
+interface JobFormState {
+  title: string
+  description: string
+  clientId: string
+  propertyId: string
+  hourlyRate: string
+  status: Exclude<JobStatus, 'active'>
+}
 
 export default function CreateJobModal({ onClose, onCreated }: { onClose: () => void; onCreated?: () => void }) {
-  const [form, setForm] = useState({ title: '', description: '', clientId: '', propertyId: '', hourlyRate: '', status: 'scheduled' })
-  const [clients, setClients] = useState<any[]>([])
-  const [properties, setProperties] = useState<any[]>([])
+  const [form, setForm] = useState<JobFormState>({
+    title: '',
+    description: '',
+    clientId: '',
+    propertyId: '',
+    hourlyRate: '',
+    status: 'scheduled',
+  })
+  const [clients, setClients] = useState<Client[]>([])
+  const [allProperties, setAllProperties] = useState<Property[]>([])
   const [saving, setSaving] = useState(false)
-  const set = (k: string, v: string) => setForm(p => ({ ...p, [k]: v }))
+  const set = <K extends keyof JobFormState>(key: K, value: JobFormState[K]) => {
+    setForm(prev => ({ ...prev, [key]: value }))
+  }
 
   useEffect(() => {
     fetch('/api/clients').then(r => r.json()).then(d => setClients(d || [])).catch(() => {})
+    fetch('/api/properties').then(r => r.json()).then(d => setAllProperties(d || [])).catch(() => {})
   }, [])
 
-  useEffect(() => {
-    if (!form.clientId) { setProperties([]); return }
-    // Filter properties from client data — fetch all jobs to get properties, or just filter from a properties endpoint
-    // For now fetch all clients and find this client's properties via /api/jobs or direct
-    fetch('/api/jobs').then(r => r.json()).then((jobs: any[]) => {
-      const props = jobs
-        .filter(j => j.client_id === form.clientId && j.property)
-        .map(j => j.property)
-        .filter((p, i, arr) => arr.findIndex((x: any) => x.id === p.id) === i)
-      setProperties(props)
-    }).catch(() => {})
-  }, [form.clientId])
+  const properties = form.clientId
+    ? allProperties.filter(property => property.client_id === form.clientId)
+    : []
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -71,14 +82,14 @@ export default function CreateJobModal({ onClose, onCreated }: { onClose: () => 
               <label className="block text-xs text-slate-500 mb-1">Client</label>
               <select value={form.clientId} onChange={e => { set('clientId', e.target.value); set('propertyId', '') }} className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
                 <option value="">— Select —</option>
-                {clients.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                {clients.map(client => <option key={client.id} value={client.id}>{client.name}</option>)}
               </select>
             </div>
             <div>
               <label className="block text-xs text-slate-500 mb-1">Property</label>
               <select value={form.propertyId} onChange={e => set('propertyId', e.target.value)} disabled={!form.clientId} className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-200 focus:outline-none focus:border-emerald-500 disabled:opacity-40">
                 <option value="">— Select —</option>
-                {properties.map((p: any) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                {properties.map(property => <option key={property.id} value={property.id}>{property.name}</option>)}
               </select>
             </div>
           </div>
@@ -89,7 +100,7 @@ export default function CreateJobModal({ onClose, onCreated }: { onClose: () => 
             </div>
             <div>
               <label className="block text-xs text-slate-500 mb-1">Status</label>
-              <select value={form.status} onChange={e => set('status', e.target.value)} className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
+              <select value={form.status} onChange={e => set('status', e.target.value as JobFormState['status'])} className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
                 <option value="scheduled">Scheduled</option>
                 <option value="in_progress">In Progress</option>
                 <option value="complete">Complete</option>

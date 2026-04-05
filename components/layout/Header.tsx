@@ -5,20 +5,25 @@ import { format } from 'date-fns'
 import { Activity, Wifi, WifiOff } from 'lucide-react'
 import { isSupabaseConfigured } from '@/lib/supabase'
 
+function getStoredClockStart(): Date | null {
+  if (typeof window === 'undefined') return null
+
+  const stored = localStorage.getItem('nhs_clock_session')
+  if (!stored) return null
+
+  try {
+    const session = JSON.parse(stored) as { startTime?: string }
+    return session.startTime ? new Date(session.startTime) : null
+  } catch {
+    return null
+  }
+}
+
 export default function Header() {
   const [now, setNow] = useState(new Date())
-  const [clockedIn, setClockedIn] = useState(false)
+  const [clockStart, setClockStart] = useState<Date | null>(() => getStoredClockStart())
+  const [clockedIn, setClockedIn] = useState(() => getStoredClockStart() !== null)
   const [elapsed, setElapsed] = useState('00:00:00')
-  const [clockStart, setClockStart] = useState<Date | null>(null)
-
-  useEffect(() => {
-    const stored = localStorage.getItem('nhs_clock_session')
-    if (stored) {
-      const session = JSON.parse(stored)
-      setClockedIn(true)
-      setClockStart(new Date(session.startTime))
-    }
-  }, [])
 
   useEffect(() => {
     const timer = setInterval(() => {

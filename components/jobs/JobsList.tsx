@@ -2,27 +2,31 @@
 
 import { useState, useEffect } from 'react'
 import { Search, ChevronDown, ArrowUpRight } from 'lucide-react'
-import { formatHours, statusColor } from '@/lib/utils'
-import type { JobStatus } from '@/types'
+import { statusColor } from '@/lib/utils'
+import type { Client, Job, JobStatus } from '@/types'
 
 export default function JobsList({ onSelect }: { onSelect: (id: string) => void }) {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<JobStatus | 'all'>('all')
   const [clientFilter, setClientFilter] = useState('all')
-  const [allJobs, setAllJobs] = useState<any[]>([])
-  const [clients, setClients] = useState<any[]>([])
+  const [allJobs, setAllJobs] = useState<Job[]>([])
+  const [clients, setClients] = useState<Client[]>([])
 
   useEffect(() => {
     fetch('/api/jobs').then(r => r.json()).then(data => setAllJobs(data || [])).catch(() => {})
     fetch('/api/clients').then(r => r.json()).then(data => setClients(data || [])).catch(() => {})
   }, [])
 
-  const enriched = allJobs
-
-  const filtered = enriched.filter((job: any) => {
+  const filtered = allJobs.filter(job => {
     if (statusFilter !== 'all' && job.status !== statusFilter) return false
     if (clientFilter !== 'all' && job.client_id !== clientFilter) return false
-    if (search && !job.title.toLowerCase().includes(search.toLowerCase()) && !job.client?.name.toLowerCase().includes(search.toLowerCase())) return false
+    if (
+      search &&
+      !job.title.toLowerCase().includes(search.toLowerCase()) &&
+      !job.client?.name?.toLowerCase().includes(search.toLowerCase())
+    ) {
+      return false
+    }
     return true
   })
 
@@ -36,7 +40,8 @@ export default function JobsList({ onSelect }: { onSelect: (id: string) => void 
         <div className="relative">
           <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as JobStatus | 'all')} className="appearance-none pl-3 pr-8 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-200 focus:outline-none focus:border-emerald-500 cursor-pointer">
             <option value="all">All Status</option>
-            <option value="active">Active</option>
+            <option value="scheduled">Scheduled</option>
+            <option value="in_progress">In Progress</option>
             <option value="complete">Complete</option>
             <option value="cancelled">Cancelled</option>
           </select>
@@ -45,7 +50,7 @@ export default function JobsList({ onSelect }: { onSelect: (id: string) => void 
         <div className="relative">
           <select value={clientFilter} onChange={e => setClientFilter(e.target.value)} className="appearance-none pl-3 pr-8 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-200 focus:outline-none focus:border-emerald-500 cursor-pointer">
             <option value="all">All Clients</option>
-            {clients.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            {clients.map(client => <option key={client.id} value={client.id}>{client.name}</option>)}
           </select>
           <ChevronDown className="absolute right-2.5 top-2.5 w-4 h-4 text-slate-400 pointer-events-none" />
         </div>
@@ -61,7 +66,7 @@ export default function JobsList({ onSelect }: { onSelect: (id: string) => void 
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800/50">
-            {filtered.map((job: any) => (
+            {filtered.map(job => (
               <tr key={job.id} onClick={() => onSelect(job.id)} className="hover:bg-slate-800/40 transition-colors cursor-pointer group">
                 <td className="px-5 py-3.5">
                   <div className="flex items-center gap-2">

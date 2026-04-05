@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { CATEGORY_COLORS, CATEGORY_LABELS, formatCurrency, formatMinutes } from '@/lib/utils'
-import type { CategoryType } from '@/types'
+import type { CategoryType, TimeEntry } from '@/types'
 
 const DAY_START_HOUR = 7
 const DAY_END_HOUR = 18
@@ -19,7 +19,7 @@ function fmtHour(h: number) {
 }
 
 export default function DailyTimeline({ date }: { date: string }) {
-  const [entries, setEntries] = useState<any[]>([])
+  const [entries, setEntries] = useState<TimeEntry[]>([])
 
   useEffect(() => {
     fetch(`/api/time-entries?date=${date}`)
@@ -97,4 +97,3 @@ export default function DailyTimeline({ date }: { date: string }) {
     </div>
   )
 }
-

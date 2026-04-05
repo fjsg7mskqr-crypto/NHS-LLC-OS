@@ -4,25 +4,47 @@ import { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
 import { CATEGORY_LABELS } from '@/lib/utils'
 import { format } from 'date-fns'
-import type { CategoryType } from '@/types'
+import type { CategoryType, Client, Job } from '@/types'
 
 const CATEGORIES: CategoryType[] = ['client_work', 'drive_time', 'errand', 'prep', 'admin', 'equipment_maint']
 
+interface TimeEntryFormState {
+  date: string
+  startTime: string
+  endTime: string
+  category: CategoryType
+  clientId: string
+  jobId: string
+  notes: string
+  billable: boolean
+}
+
 export default function TimeEntryForm({ onClose, onSaved }: { onClose: () => void; onSaved?: () => void }) {
   const today = format(new Date(), 'yyyy-MM-dd')
-  const [form, setForm] = useState({ date: today, startTime: '09:00', endTime: '11:00', category: 'client_work' as CategoryType, clientId: '', jobId: '', notes: '', billable: true })
-  const [clients, setClients] = useState<any[]>([])
-  const [jobs, setJobs] = useState<any[]>([])
+  const [form, setForm] = useState<TimeEntryFormState>({
+    date: today,
+    startTime: '09:00',
+    endTime: '11:00',
+    category: 'client_work',
+    clientId: '',
+    jobId: '',
+    notes: '',
+    billable: true,
+  })
+  const [clients, setClients] = useState<Client[]>([])
+  const [jobs, setJobs] = useState<Job[]>([])
   const [saving, setSaving] = useState(false)
-  const set = (k: string, v: any) => setForm(p => ({ ...p, [k]: v }))
+  const set = <K extends keyof TimeEntryFormState>(key: K, value: TimeEntryFormState[K]) => {
+    setForm(prev => ({ ...prev, [key]: value }))
+  }
 
   useEffect(() => {
     fetch('/api/clients').then(r => r.json()).then(d => setClients(d || [])).catch(() => {})
     fetch('/api/jobs').then(r => r.json()).then(d => setJobs(d || [])).catch(() => {})
   }, [])
 
-  const activeJobs = jobs.filter((j: any) => j.client_id === form.clientId && j.status !== 'cancelled')
-  const selectedClient = clients.find((c: any) => c.id === form.clientId)
+  const activeJobs = jobs.filter(job => job.client_id === form.clientId && job.status !== 'cancelled')
+  const selectedClient = clients.find(client => client.id === form.clientId)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -76,7 +98,7 @@ export default function TimeEntryForm({ onClose, onSaved }: { onClose: () => voi
           </div>
           <div>
             <label className="block text-xs text-slate-500 mb-1">Category</label>
-            <select value={form.category} onChange={e => set('category', e.target.value)} className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
+            <select value={form.category} onChange={e => set('category', e.target.value as CategoryType)} className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
               {CATEGORIES.map(cat => <option key={cat} value={cat}>{CATEGORY_LABELS[cat]}</option>)}
             </select>
           </div>
@@ -84,7 +106,7 @@ export default function TimeEntryForm({ onClose, onSaved }: { onClose: () => voi
             <label className="block text-xs text-slate-500 mb-1">Client</label>
             <select value={form.clientId} onChange={e => { set('clientId', e.target.value); set('jobId', '') }} className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
               <option value="">— No client —</option>
-              {clients.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              {clients.map(client => <option key={client.id} value={client.id}>{client.name}</option>)}
             </select>
           </div>
           {form.clientId && (
@@ -92,7 +114,7 @@ export default function TimeEntryForm({ onClose, onSaved }: { onClose: () => voi
               <label className="block text-xs text-slate-500 mb-1">Job (optional)</label>
               <select value={form.jobId} onChange={e => set('jobId', e.target.value)} className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
                 <option value="">— No job —</option>
-                {activeJobs.map((j: any) => <option key={j.id} value={j.id}>{j.title}</option>)}
+                {activeJobs.map(job => <option key={job.id} value={job.id}>{job.title}</option>)}
               </select>
             </div>
           )}

@@ -5,28 +5,28 @@ import { Plus } from 'lucide-react'
 import JobsList from './JobsList'
 import JobDetail from './JobDetail'
 import CreateJobModal from './CreateJobModal'
+import type { Job } from '@/types'
 
 export default function JobsTab() {
-  const [selectedJobId, setSelectedJobId] = useState<string | null>(null)
-  const [selectedJob, setSelectedJob] = useState<any>(null)
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null)
   const [showCreate, setShowCreate] = useState(false)
   const [jobCount, setJobCount] = useState<{ total: number; active: number } | null>(null)
   const [listKey, setListKey] = useState(0)
 
   useEffect(() => {
-    fetch('/api/jobs').then(r => r.json()).then((jobs: any[]) => {
+    fetch('/api/jobs').then(r => r.json()).then((jobs: Job[]) => {
       setJobCount({ total: jobs.length, active: jobs.filter(j => j.status === 'scheduled' || j.status === 'in_progress').length })
     }).catch(() => {})
   }, [listKey])
 
   const handleSelect = (id: string) => {
-    fetch('/api/jobs').then(r => r.json()).then((jobs: any[]) => {
-      const job = jobs.find((j: any) => j.id === id)
-      if (job) { setSelectedJob(job); setSelectedJobId(id) }
+    fetch('/api/jobs').then(r => r.json()).then((jobs: Job[]) => {
+      const job = jobs.find(j => j.id === id)
+      if (job) setSelectedJob(job)
     }).catch(() => {})
   }
 
-  const handleBack = () => { setSelectedJob(null); setSelectedJobId(null) }
+  const handleBack = () => { setSelectedJob(null) }
 
   return (
     <div className="space-y-6">
@@ -39,7 +39,7 @@ export default function JobsTab() {
           <Plus className="w-4 h-4" /> New Job
         </button>
       </div>
-      {selectedJob ? <JobDetail job={selectedJob} onBack={handleBack} /> : <JobsList key={listKey} onSelect={handleSelect} />}
+      {selectedJob ? <JobDetail key={selectedJob.id} job={selectedJob} onBack={handleBack} /> : <JobsList key={listKey} onSelect={handleSelect} />}
       {showCreate && <CreateJobModal onClose={() => setShowCreate(false)} onCreated={() => setListKey(k => k + 1)} />}
     </div>
   )
