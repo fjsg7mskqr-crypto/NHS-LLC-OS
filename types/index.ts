@@ -109,6 +109,34 @@ export interface SquareInvoice {
   job?: Job
 }
 
+export interface Invoice {
+  id: string
+  client_id: string
+  invoice_number: string
+  status: InvoiceStatus
+  issue_date: string
+  due_date: string
+  notes?: string
+  square_invoice_id?: string
+  subtotal: number
+  tax: number
+  total: number
+  created_at: string
+  updated_at: string
+  client?: Client
+  line_items?: InvoiceLineItem[]
+}
+
+export interface InvoiceLineItem {
+  id: string
+  invoice_id: string
+  description: string
+  quantity: number
+  unit_price: number
+  line_total: number
+  sort_order: number
+}
+
 export interface ClockSession {
   startTime: string
   jobId: string
