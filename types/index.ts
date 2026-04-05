@@ -1,0 +1,110 @@
+export type CategoryType = 'client_work' | 'drive_time' | 'errand' | 'prep' | 'admin' | 'equipment_maint'
+export type JobStatus = 'active' | 'complete' | 'cancelled'
+export type Priority = 'high' | 'medium' | 'low'
+export type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled'
+export type CalendarBlockType = 'sbr_booking' | 'job_day'
+
+export interface Client {
+  id: string
+  name: string
+  email?: string
+  phone?: string
+  default_hourly_rate: number
+  notes?: string
+  created_at: string
+}
+
+export interface Property {
+  id: string
+  client_id: string
+  name: string
+  address?: string
+  type: 'residential' | 'commercial' | 'vacation_rental' | 'other'
+  notes?: string
+  client?: Client
+}
+
+export interface Job {
+  id: string
+  client_id: string
+  property_id?: string
+  title: string
+  description?: string
+  status: JobStatus
+  target_rate?: number
+  created_at: string
+  completed_at?: string
+  client?: Client
+  property?: Property
+  time_entries?: TimeEntry[]
+}
+
+export interface TimeEntry {
+  id: string
+  job_id?: string
+  client_id?: string
+  category: CategoryType
+  start_time: string
+  end_time?: string
+  duration_minutes?: number
+  billable: boolean
+  rate?: number
+  notes?: string
+  created_at: string
+  job?: Job
+  client?: Client
+}
+
+export interface Task {
+  id: string
+  job_id?: string
+  client_id?: string
+  title: string
+  priority: Priority
+  due_date?: string
+  completed: boolean
+  completed_at?: string
+  job?: Job
+  client?: Client
+}
+
+export interface Equipment {
+  id: string
+  name: string
+  type?: string
+  location: 'home_base' | 'den' | 'lodge' | 'in_truck' | 'other'
+  condition: 'excellent' | 'good' | 'fair' | 'needs_repair'
+  notes?: string
+}
+
+export interface CalendarBlock {
+  id: string
+  property_id: string
+  start_date: string
+  end_date: string
+  type: CalendarBlockType
+  notes?: string
+  property?: Property
+}
+
+export interface SquareInvoice {
+  id: string
+  square_id?: string
+  client_id?: string
+  job_id?: string
+  status: InvoiceStatus
+  amount_due: number
+  amount_paid: number
+  due_date?: string
+  created_at: string
+  synced_at: string
+  client?: Client
+  job?: Job
+}
+
+export interface ClockSession {
+  startTime: string
+  jobId: string
+  clientId: string
+  category: CategoryType
+}
