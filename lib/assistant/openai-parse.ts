@@ -224,12 +224,16 @@ export async function chooseAssistantActionWithOpenAI(input: {
     }
   }
 
+  const openaiController = new AbortController()
+  const openaiTimeout = setTimeout(() => openaiController.abort(), 30000)
+
   const response = await fetch('https://api.openai.com/v1/responses', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${getOpenAIKey()}`,
       'Content-Type': 'application/json',
     },
+    signal: openaiController.signal,
     body: JSON.stringify({
       model: getOpenAIModel(),
       instructions: [
@@ -254,6 +258,8 @@ export async function chooseAssistantActionWithOpenAI(input: {
       tools: ACTION_TOOLS,
     }),
   })
+
+  clearTimeout(openaiTimeout)
 
   const payload = await response.json() as {
     error?: { message?: string }

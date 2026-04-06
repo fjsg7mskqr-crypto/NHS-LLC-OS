@@ -6,6 +6,8 @@ import { chooseAssistantActionWithOpenAI } from '@/lib/assistant/openai-parse'
 import { logAssistantEvent } from '@/lib/domain/audit'
 import type { AssistantActor, AssistantResponse } from '@/lib/assistant/types'
 
+export const maxDuration = 60
+
 type ParseAssistantRequest = {
   message: string
   actor?: AssistantActor
@@ -82,9 +84,10 @@ export async function POST(request: NextRequest) {
       } : undefined,
     } satisfies AssistantResponse)
   } catch (error) {
+    const isAbort = error instanceof Error && error.name === 'AbortError'
     return Response.json(
-      { error: error instanceof Error ? error.message : 'Assistant parse failed' },
-      { status: 400 }
+      { error: isAbort ? 'OpenAI request timed out — try a shorter message' : (error instanceof Error ? error.message : 'Assistant parse failed') },
+      { status: isAbort ? 504 : 400 }
     )
   }
 }
