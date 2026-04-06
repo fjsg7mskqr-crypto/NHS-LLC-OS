@@ -116,6 +116,88 @@ function generateCSV(entries: TimeEntry[]): string {
   ].join('\n')
 }
 
+function generateTimecardCSV(entries: TimeEntry[]): string {
+  const headers = [
+    'Employee number', 'First name', 'Last name', 'Job title',
+    'Clockin date', 'Clockin time', 'Clockout date', 'Clockout time',
+    'Total paid hours', 'Hourly wage', 'Total labor cost',
+  ]
+
+  const escape = (v: string | number) => {
+    const s = String(v)
+    if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+      return `"${s}"`
+    }
+    return s
+  }
+
+  // Group entries by job title (property name or job title)
+  const grouped: Record<string, TimeEntry[]> = {}
+  for (const entry of entries) {
+    const jobTitle = entry.property?.name || entry.job?.title || entry.client?.name || 'General'
+    if (!grouped[jobTitle]) grouped[jobTitle] = []
+    grouped[jobTitle].push(entry)
+  }
+
+  const lines: string[] = [headers.map(escape).join(',')]
+  let grandTotalHours = 0
+  let grandTotalCost = 0
+
+  for (const jobTitle of Object.keys(grouped).sort()) {
+    const group = grouped[jobTitle]
+    let groupHours = 0
+    let groupCost = 0
+
+    for (const entry of group) {
+      const start = new Date(entry.start_time)
+      const end = entry.end_time ? new Date(entry.end_time) : null
+      const hours = entry.duration_minutes
+        ? Math.round((entry.duration_minutes / 60) * 100) / 100
+        : 0
+      const rate = entry.hourly_rate ?? 0
+      const cost = Math.round(hours * Number(rate) * 100) / 100
+
+      groupHours += hours
+      groupCost += cost
+
+      lines.push([
+        '',
+        'Ethan',
+        'NOVAK',
+        jobTitle,
+        format(start, 'M/d/yy'),
+        format(start, 'h:mm:ss a'),
+        end ? format(end, 'M/d/yy') : '',
+        end ? format(end, 'h:mm:ss a') : '',
+        hours,
+        rate ? `$${Number(rate).toFixed(2)}` : '',
+        cost ? `$${cost.toFixed(2)}` : '',
+      ].map(escape).join(','))
+    }
+
+    // Subtotal row
+    grandTotalHours += groupHours
+    grandTotalCost += groupCost
+    lines.push([
+      'Total', '', '', '', '', '', '', '',
+      Math.round(groupHours * 100) / 100,
+      '',
+      `$${groupCost.toFixed(2)}`,
+    ].map(escape).join(','))
+    lines.push('') // blank row between groups
+  }
+
+  // Grand total
+  lines.push([
+    '', '', '', '', '', '', '', '',
+    Math.round(grandTotalHours * 100) / 100,
+    '',
+    `$${grandTotalCost.toFixed(2)}`,
+  ].map(escape).join(','))
+
+  return lines.join('\n')
+}
+
 function downloadBlob(content: BlobPart, filename: string, mimeType: string) {
   const blob = new Blob([content], { type: mimeType })
   const url = URL.createObjectURL(blob)
@@ -297,6 +379,7 @@ export default function TimesheetExportPanel() {
   const [category, setCategory] = useState('')
   const [clients, setClients] = useState<Client[]>([])
   const [properties, setProperties] = useState<(Property & { client?: Client })[]>([])
+  const [csvFormat, setCsvFormat] = useState<'detailed' | 'timecard'>('timecard')
   const [loading, setLoading] = useState<'csv' | 'pdf' | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [entryCount, setEntryCount] = useState<number | null>(null)
@@ -386,7 +469,7 @@ export default function TimesheetExportPanel() {
       const entries = await validateAndFetch()
       if (!entries) { setLoading(null); return }
       const range = getDateRange()
-      const csv = generateCSV(entries)
+      const csv = csvFormat === 'timecard' ? generateTimecardCSV(entries) : generateCSV(entries)
       const filename = `timesheet_${range.start}_${range.end}.csv`
       downloadBlob(csv, filename, 'text/csv;charset=utf-8;')
     } catch {
@@ -535,6 +618,33 @@ export default function TimesheetExportPanel() {
             {error}
           </div>
         )}
+
+        {/* CSV Format */}
+        <div>
+          <label className="block text-xs text-slate-500 mb-2">CSV Format</label>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setCsvFormat('timecard')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                csvFormat === 'timecard'
+                  ? 'bg-emerald-500/20 border border-emerald-500/40 text-emerald-300'
+                  : 'bg-slate-800/50 border border-slate-700 text-slate-400 hover:text-slate-200 hover:border-slate-600'
+              }`}
+            >
+              Timecard (Payroll)
+            </button>
+            <button
+              onClick={() => setCsvFormat('detailed')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                csvFormat === 'detailed'
+                  ? 'bg-emerald-500/20 border border-emerald-500/40 text-emerald-300'
+                  : 'bg-slate-800/50 border border-slate-700 text-slate-400 hover:text-slate-200 hover:border-slate-600'
+              }`}
+            >
+              Detailed
+            </button>
+          </div>
+        </div>
 
         {/* Export buttons */}
         <div className="flex gap-3 pt-1">
