@@ -55,17 +55,21 @@ export async function POST(request: NextRequest) {
     const results: Array<{ name: string; args: Record<string, unknown>; result: unknown }> = []
 
     for (const item of actionList) {
-      const action = await runAssistantAction(context, item.name, item.args)
-      replies.push(action.reply)
-      results.push({ name: action.name, args: action.args, result: action.result })
+      try {
+        const action = await runAssistantAction(context, item.name, item.args)
+        replies.push(action.reply)
+        results.push({ name: action.name, args: action.args, result: action.result })
 
-      if (!action.readOnly) {
-        await logAssistantEvent(context.supabase, {
-          actor,
-          actionName: action.name,
-          args: action.args,
-          result: action.result,
-        })
+        if (!action.readOnly) {
+          await logAssistantEvent(context.supabase, {
+            actor,
+            actionName: action.name,
+            args: action.args,
+            result: action.result,
+          })
+        }
+      } catch (err) {
+        replies.push(`Failed: ${err instanceof Error ? err.message : 'Unknown error'}`)
       }
     }
 

@@ -71,27 +71,35 @@ async function executeAssistantAction(action) {
 }
 
 async function parsePlainTextMessage(content) {
-  const response = await fetch(`${process.env.ASSISTANT_BASE_URL}/api/assistant/parse`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${process.env.ASSISTANT_SERVICE_TOKEN}`,
-    },
-    body: JSON.stringify({
-      actor: {
-        surface: 'discord',
-        discordUserId: process.env.DISCORD_USER_ID,
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 55000)
+
+  try {
+    const response = await fetch(`${process.env.ASSISTANT_BASE_URL}/api/assistant/parse`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${process.env.ASSISTANT_SERVICE_TOKEN}`,
       },
-      message: content,
-    }),
-  })
+      body: JSON.stringify({
+        actor: {
+          surface: 'discord',
+          discordUserId: process.env.DISCORD_USER_ID,
+        },
+        message: content,
+      }),
+      signal: controller.signal,
+    })
 
-  const payload = await response.json()
-  if (!response.ok) {
-    throw new Error(payload?.error || 'Assistant parse failed')
+    const payload = await response.json()
+    if (!response.ok) {
+      throw new Error(payload?.error || 'Assistant parse failed')
+    }
+
+    return payload
+  } finally {
+    clearTimeout(timeout)
   }
-
-  return payload
 }
 
 client.once(Events.ClientReady, readyClient => {
@@ -105,9 +113,15 @@ client.on(Events.MessageCreate, async message => {
 
   try {
     const result = await parsePlainTextMessage(message.content)
-    await message.reply(result.reply)
+    await message.reply(result.reply || 'Done (no reply text)')
   } catch (error) {
-    await message.reply(error instanceof Error ? error.message : 'Discord worker failed')
+    const msg = error instanceof Error ? error.message : 'Discord worker failed'
+    console.error('Bot error:', msg)
+    if (error?.name === 'AbortError') {
+      await message.reply('Request timed out — try shorter messages or split into separate entries.')
+    } else {
+      await message.reply(msg)
+    }
   }
 })
 
