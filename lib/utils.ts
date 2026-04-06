@@ -84,8 +84,9 @@ export function statusColor(status: string): string {
 export function invoiceStatusColor(status: string): string {
   switch (status) {
     case 'draft': return 'bg-slate-500/20 text-slate-400 border-slate-500/30'
-    case 'sent': return 'bg-blue-500/20 text-blue-400 border-blue-500/30'
+    case 'sent': case 'unpaid': return 'bg-blue-500/20 text-blue-400 border-blue-500/30'
     case 'paid': return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+    case 'partially_paid': return 'bg-amber-500/20 text-amber-400 border-amber-500/30'
     case 'overdue': return 'bg-red-500/20 text-red-400 border-red-500/30'
     case 'cancelled': return 'bg-gray-500/20 text-gray-400 border-gray-500/30'
     default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30'

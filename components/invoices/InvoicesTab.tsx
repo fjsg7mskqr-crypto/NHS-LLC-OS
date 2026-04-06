@@ -6,26 +6,31 @@ import InvoicesList from './InvoicesList'
 import InvoiceDetail from './InvoiceDetail'
 import CreateInvoiceModal from './CreateInvoiceModal'
 import ErrorBanner from '@/components/ui/ErrorBanner'
-import { formatCurrency } from '@/lib/utils'
-import type { Invoice } from '@/types'
+import { formatCurrency, invoiceStatusColor } from '@/lib/utils'
+import type { Invoice, SquareInvoice } from '@/types'
+import { format } from 'date-fns'
 
 export default function InvoicesTab() {
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null)
   const [showCreate, setShowCreate] = useState(false)
   const [invoices, setInvoices] = useState<Invoice[]>([])
+  const [squareInvoices, setSquareInvoices] = useState<SquareInvoice[]>([])
   const [listKey, setListKey] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [view, setView] = useState<'manual' | 'square'>('square')
 
   useEffect(() => {
     setLoading(true)
     setError(null)
-    fetch('/api/invoices')
-      .then(r => {
-        if (!r.ok) throw new Error('Failed to load invoices')
-        return r.json()
+    Promise.all([
+      fetch('/api/invoices').then(r => r.ok ? r.json() : []),
+      fetch('/api/square-invoices').then(r => r.ok ? r.json() : []),
+    ])
+      .then(([manual, square]) => {
+        setInvoices(manual || [])
+        setSquareInvoices(square || [])
       })
-      .then((data: Invoice[]) => setInvoices(data || []))
       .catch(e => setError(e.message))
       .finally(() => setLoading(false))
   }, [listKey])
@@ -34,16 +39,34 @@ export default function InvoicesTab() {
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10)
   const yearStart = new Date(now.getFullYear(), 0, 1).toISOString().slice(0, 10)
 
-  const outstanding = invoices
+  // Combine both sources for summary metrics
+  const sqOutstanding = squareInvoices
+    .filter(i => i.status === 'unpaid' || i.status === 'overdue' || i.status === 'partially_paid')
+    .reduce((s, i) => s + Number(i.amount_due), 0)
+  const manualOutstanding = invoices
     .filter(i => i.status === 'sent' || i.status === 'overdue')
     .reduce((s, i) => s + i.total, 0)
-  const overdue = invoices
+  const outstanding = sqOutstanding + manualOutstanding
+
+  const sqOverdue = squareInvoices
+    .filter(i => i.status === 'overdue')
+    .reduce((s, i) => s + Number(i.amount_due), 0)
+  const manualOverdue = invoices
     .filter(i => i.status === 'overdue')
     .reduce((s, i) => s + i.total, 0)
-  const paidThisMonth = invoices
+  const overdue = sqOverdue + manualOverdue
+
+  const sqPaidMonth = squareInvoices
+    .filter(i => i.status === 'paid' && i.paid_date && i.paid_date >= monthStart)
+    .reduce((s, i) => s + Number(i.amount_paid), 0)
+  const paidThisMonth = sqPaidMonth + invoices
     .filter(i => i.status === 'paid' && i.updated_at >= monthStart)
     .reduce((s, i) => s + i.total, 0)
-  const paidYTD = invoices
+
+  const sqPaidYTD = squareInvoices
+    .filter(i => i.status === 'paid' && i.paid_date && i.paid_date >= yearStart)
+    .reduce((s, i) => s + Number(i.amount_paid), 0)
+  const paidYTD = sqPaidYTD + invoices
     .filter(i => i.status === 'paid' && i.updated_at >= yearStart)
     .reduce((s, i) => s + i.total, 0)
 
@@ -96,15 +119,96 @@ export default function InvoicesTab() {
         </div>
       </div>
 
-      {selectedInvoice ? (
-        <InvoiceDetail
-          key={selectedInvoice.id}
-          invoice={selectedInvoice}
-          onBack={handleBack}
-          onUpdated={handleUpdated}
-        />
+      {/* View toggle */}
+      <div className="flex gap-2">
+        <button
+          onClick={() => setView('square')}
+          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+            view === 'square'
+              ? 'bg-emerald-500/20 border border-emerald-500/40 text-emerald-300'
+              : 'bg-slate-800/50 border border-slate-700 text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          Square ({squareInvoices.length})
+        </button>
+        <button
+          onClick={() => setView('manual')}
+          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+            view === 'manual'
+              ? 'bg-emerald-500/20 border border-emerald-500/40 text-emerald-300'
+              : 'bg-slate-800/50 border border-slate-700 text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          Manual ({invoices.length})
+        </button>
+      </div>
+
+      {view === 'manual' ? (
+        selectedInvoice ? (
+          <InvoiceDetail
+            key={selectedInvoice.id}
+            invoice={selectedInvoice}
+            onBack={handleBack}
+            onUpdated={handleUpdated}
+          />
+        ) : (
+          <InvoicesList key={listKey} onSelect={handleSelect} />
+        )
       ) : (
-        <InvoicesList key={listKey} onSelect={handleSelect} />
+        <div className="rounded-xl border border-slate-800 bg-slate-900/50 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-800 text-left text-xs text-slate-500">
+                  <th className="px-4 py-3 font-medium">Client</th>
+                  <th className="px-4 py-3 font-medium">Status</th>
+                  <th className="px-4 py-3 font-medium text-right">Total</th>
+                  <th className="px-4 py-3 font-medium text-right">Paid</th>
+                  <th className="px-4 py-3 font-medium text-right">Due</th>
+                  <th className="px-4 py-3 font-medium">Issued</th>
+                  <th className="px-4 py-3 font-medium">Due Date</th>
+                  <th className="px-4 py-3 font-medium">Last Synced</th>
+                </tr>
+              </thead>
+              <tbody>
+                {squareInvoices.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="px-4 py-8 text-center text-slate-500">
+                      No Square invoices synced yet. Hit &quot;Sync Square&quot; to pull them in.
+                    </td>
+                  </tr>
+                ) : (
+                  squareInvoices.map(inv => (
+                    <tr key={inv.square_id} className="border-b border-slate-800/50 hover:bg-slate-800/30">
+                      <td className="px-4 py-3 text-slate-200">
+                        {inv.client?.name || <span className="text-slate-600">Unmatched</span>}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${invoiceStatusColor(inv.status)}`}>
+                          {inv.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right text-slate-200">{formatCurrency(Number(inv.total_amount))}</td>
+                      <td className="px-4 py-3 text-right text-emerald-400">{formatCurrency(Number(inv.amount_paid))}</td>
+                      <td className="px-4 py-3 text-right text-amber-400">
+                        {Number(inv.amount_due) > 0 ? formatCurrency(Number(inv.amount_due)) : '—'}
+                      </td>
+                      <td className="px-4 py-3 text-slate-400">
+                        {inv.issued_date ? format(new Date(inv.issued_date + 'T12:00:00'), 'MMM d, yyyy') : '—'}
+                      </td>
+                      <td className="px-4 py-3 text-slate-400">
+                        {inv.due_date ? format(new Date(inv.due_date + 'T12:00:00'), 'MMM d, yyyy') : '—'}
+                      </td>
+                      <td className="px-4 py-3 text-slate-600 text-xs">
+                        {format(new Date(inv.last_synced_at), 'MMM d, h:mm a')}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
       )}
 
       {showCreate && (
