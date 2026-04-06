@@ -95,40 +95,41 @@ export default function TimeTab() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-white">Time</h1>
-          <p className="text-sm text-slate-500">{headerTitle()}</p>
+      {/* Single header row: title, nav, view toggle, add button */}
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-4">
+          <div>
+            <h1 className="text-xl font-bold text-white">Time</h1>
+            <p className="text-sm text-slate-500">{headerTitle()}</p>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <button onClick={() => navigate(-1)} className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors"><ChevronLeft className="w-4 h-4" /></button>
+            <button onClick={() => navigate(1)} className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors"><ChevronRight className="w-4 h-4" /></button>
+            <button onClick={goToday} className="ml-1 px-3 py-1.5 rounded-lg border border-slate-700 text-xs text-slate-400 hover:text-slate-200 hover:border-slate-600 transition-colors">Today</button>
+          </div>
         </div>
-        <button onClick={() => setShowForm(true)} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black font-semibold text-sm transition-colors">
-          <Plus className="w-4 h-4" /> Add Entry
-        </button>
-      </div>
-
-      {/* View toggle + nav */}
-      <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <button onClick={() => navigate(-1)} className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors"><ChevronLeft className="w-4 h-4" /></button>
-          <button onClick={() => navigate(1)} className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors"><ChevronRight className="w-4 h-4" /></button>
-          <button onClick={goToday} className="px-3 py-1.5 rounded-lg border border-slate-700 text-xs text-slate-400 hover:text-slate-200 hover:border-slate-600 transition-colors">Today</button>
-        </div>
-        <div className="flex rounded-lg border border-slate-700 overflow-hidden">
-          {(['day', 'week', 'month'] as ViewMode[]).map(mode => (
-            <button
-              key={mode}
-              onClick={() => {
-                setViewMode(mode)
-                if (mode === 'day') setAnchor(new Date(effectiveSelected + 'T12:00:00'))
-              }}
-              className={`px-3 py-1.5 text-xs font-medium capitalize transition-colors ${
-                viewMode === mode
-                  ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
-              } ${mode !== 'day' ? 'border-l border-slate-700' : ''}`}
-            >
-              {mode}
-            </button>
-          ))}
+          <div className="flex rounded-lg border border-slate-700 overflow-hidden">
+            {(['day', 'week', 'month'] as ViewMode[]).map(mode => (
+              <button
+                key={mode}
+                onClick={() => {
+                  setViewMode(mode)
+                  if (mode === 'day') setAnchor(new Date(effectiveSelected + 'T12:00:00'))
+                }}
+                className={`px-3 py-1.5 text-xs font-medium capitalize transition-colors ${
+                  viewMode === mode
+                    ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                } ${mode !== 'day' ? 'border-l border-slate-700' : ''}`}
+              >
+                {mode}
+              </button>
+            ))}
+          </div>
+          <button onClick={() => setShowForm(true)} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black font-semibold text-sm transition-colors">
+            <Plus className="w-4 h-4" /> Add Entry
+          </button>
         </div>
       </div>
 
