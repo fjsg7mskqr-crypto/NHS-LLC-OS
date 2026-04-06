@@ -14,6 +14,11 @@ const PROPERTY_TYPE_LABELS: Record<string, string> = {
   other: 'Other',
 }
 
+function getPropertyTypeLabel(type?: Property['type']) {
+  if (!type) return 'Unspecified'
+  return PROPERTY_TYPE_LABELS[type] || type
+}
+
 export default function ClientDetail({
   client,
   onBack,
@@ -280,7 +285,7 @@ export default function ClientDetail({
                   <td className="px-4 py-3.5 text-sm text-slate-400 hidden md:table-cell">{prop.address || '—'}</td>
                   <td className="px-4 py-3.5">
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border bg-slate-500/20 text-slate-400 border-slate-500/30">
-                      {PROPERTY_TYPE_LABELS[prop.type] || prop.type}
+                      {getPropertyTypeLabel(prop.type)}
                     </span>
                   </td>
                   <td className="px-4 py-3.5 text-right">

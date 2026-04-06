@@ -39,7 +39,7 @@ export interface Property {
   client_id: string
   name: string
   address?: string
-  type: 'residential' | 'commercial' | 'vacation_rental' | 'other'
+  type?: 'residential' | 'commercial' | 'vacation_rental' | 'other'
   notes?: string
   client?: Client
 }
