@@ -37,7 +37,7 @@ export function formatDateShort(dateStr: string): string {
 export const CATEGORY_COLORS: Record<CategoryType, string> = {
   client_work: '#22c55e',
   drive_time: '#3b82f6',
-  errand: '#a78bfa',
+
   prep: '#f59e0b',
   admin: '#6b7280',
   equipment_maint: '#14b8a6',
@@ -46,7 +46,7 @@ export const CATEGORY_COLORS: Record<CategoryType, string> = {
 export const CATEGORY_LABELS: Record<CategoryType, string> = {
   client_work: 'Client Work',
   drive_time: 'Drive Time',
-  errand: 'Errand',
+
   prep: 'Prep',
   admin: 'Admin',
   equipment_maint: 'Equipment Maint.',
@@ -55,7 +55,7 @@ export const CATEGORY_LABELS: Record<CategoryType, string> = {
 export const CATEGORY_BG: Record<CategoryType, string> = {
   client_work: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
   drive_time: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-  errand: 'bg-violet-500/20 text-violet-400 border-violet-500/30',
+
   prep: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
   admin: 'bg-gray-500/20 text-gray-400 border-gray-500/30',
   equipment_maint: 'bg-teal-500/20 text-teal-400 border-teal-500/30',

@@ -51,7 +51,7 @@ export const MOCK_TIME_ENTRIES: TimeEntry[] = [
   { id: 'te2', job_id: 'j1', client_id: 'c1', category: 'client_work', start_time: '2026-03-30T08:30:00Z', end_time: '2026-03-30T11:00:00Z', duration_minutes: 150, billable: true, hourly_rate: 85, notes: 'Aeration and overseeding', created_at: '2026-03-30T11:00:00Z' },
   { id: 'te3', job_id: 'j5', client_id: 'c2', category: 'drive_time', start_time: '2026-03-30T11:30:00Z', end_time: '2026-03-30T12:15:00Z', duration_minutes: 45, billable: false, hourly_rate: 0, notes: 'Drive to Lakeside Den', created_at: '2026-03-30T12:15:00Z' },
   { id: 'te4', job_id: 'j5', client_id: 'c2', category: 'client_work', start_time: '2026-03-30T12:30:00Z', end_time: '2026-03-30T14:00:00Z', duration_minutes: 90, billable: true, hourly_rate: 75, notes: 'Replaced 6 HVAC filters, checked thermostat', created_at: '2026-03-30T14:00:00Z' },
-  { id: 'te5', job_id: undefined, client_id: undefined, category: 'errand', start_time: '2026-03-30T14:30:00Z', end_time: '2026-03-30T15:15:00Z', duration_minutes: 45, billable: false, hourly_rate: 0, notes: 'Hardware store — deck screws and stain for j2', created_at: '2026-03-30T15:15:00Z' },
+  { id: 'te5', job_id: undefined, client_id: undefined, category: 'admin', start_time: '2026-03-30T14:30:00Z', end_time: '2026-03-30T15:15:00Z', duration_minutes: 45, billable: false, hourly_rate: 0, notes: 'Hardware store — deck screws and stain for j2', created_at: '2026-03-30T15:15:00Z' },
   // Tue Mar 31
   { id: 'te6', job_id: 'j2', client_id: 'c2', category: 'prep', start_time: '2026-03-31T07:30:00Z', end_time: '2026-03-31T08:00:00Z', duration_minutes: 30, billable: false, hourly_rate: 0, notes: 'Load truck with supplies', created_at: '2026-03-31T08:00:00Z' },
   { id: 'te7', job_id: 'j2', client_id: 'c2', category: 'drive_time', start_time: '2026-03-31T08:00:00Z', end_time: '2026-03-31T08:45:00Z', duration_minutes: 45, billable: false, hourly_rate: 0, notes: 'Drive to Main Lodge', created_at: '2026-03-31T08:45:00Z' },
@@ -136,7 +136,7 @@ export function getWeeklyChartData() {
   const dates = ['2026-03-30', '2026-03-31', '2026-04-01', '2026-04-02', '2026-04-03', '2026-04-04', '2026-04-05']
   return dates.map((date, i) => {
     const dayEntries = MOCK_TIME_ENTRIES.filter(te => te.start_time.startsWith(date))
-    const byCategory = { client_work: 0, drive_time: 0, errand: 0, prep: 0, admin: 0 } as Record<string, number>
+    const byCategory = { client_work: 0, drive_time: 0, prep: 0, admin: 0 } as Record<string, number>
     dayEntries.forEach(te => { byCategory[te.category] = (byCategory[te.category] || 0) + (te.duration_minutes || 0) / 60 })
     return { day: days[i], date, ...byCategory }
   })

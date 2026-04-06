@@ -5,7 +5,7 @@ import { Play, Square, ChevronDown } from 'lucide-react'
 import { CATEGORY_LABELS } from '@/lib/utils'
 import type { CategoryType, ClockSession, Client, Job } from '@/types'
 
-const CATEGORIES: CategoryType[] = ['client_work', 'drive_time', 'errand', 'prep', 'admin', 'equipment_maint']
+const CATEGORIES: CategoryType[] = ['client_work', 'drive_time', 'prep', 'admin', 'equipment_maint']
 
 function getStoredClockSession(): ClockSession | null {
   if (typeof window === 'undefined') return null

@@ -5,7 +5,7 @@ import type { CategoryType } from '@/types'
 export const VALID_CATEGORIES: CategoryType[] = [
   'client_work',
   'drive_time',
-  'errand',
+
   'prep',
   'admin',
   'equipment_maint',

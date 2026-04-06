@@ -7,7 +7,7 @@ import { addDays, format } from 'date-fns'
 import { CATEGORY_COLORS, CATEGORY_LABELS } from '@/lib/utils'
 import type { TimeEntry } from '@/types'
 
-const CATEGORIES = ['client_work', 'drive_time', 'prep', 'errand', 'admin'] as const
+const CATEGORIES = ['client_work', 'drive_time', 'prep', 'admin'] as const
 type ChartCategory = (typeof CATEGORIES)[number]
 
 interface WeeklyChartRow {
@@ -15,7 +15,7 @@ interface WeeklyChartRow {
   client_work: number
   drive_time: number
   prep: number
-  errand: number
+
   admin: number
 }
 
@@ -67,7 +67,7 @@ export default function WeeklyChart({ weekStart }: { weekStart: string }) {
             client_work: 0,
             drive_time: 0,
             prep: 0,
-            errand: 0,
+
             admin: 0,
           }
           CATEGORIES.forEach(cat => {

@@ -1,4 +1,4 @@
-export type CategoryType = 'client_work' | 'drive_time' | 'errand' | 'prep' | 'admin' | 'equipment_maint'
+export type CategoryType = 'client_work' | 'drive_time' | 'prep' | 'admin' | 'equipment_maint'
 export type JobStatus = 'scheduled' | 'in_progress' | 'active' | 'complete' | 'cancelled'
 export type Priority = 'high' | 'medium' | 'low'
 export type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled'

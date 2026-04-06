@@ -4,7 +4,7 @@ import type { CategoryType, Priority } from '@/types'
 const CATEGORY_ALIASES: Array<{ pattern: RegExp; category: CategoryType }> = [
   { pattern: /\badmin\b/, category: 'admin' },
   { pattern: /\bdrive\b/, category: 'drive_time' },
-  { pattern: /\berrand\b/, category: 'errand' },
+
   { pattern: /\bprep\b/, category: 'prep' },
   { pattern: /\bequipment|maint\b/, category: 'equipment_maint' },
   { pattern: /\bclient work|job work|billable\b/, category: 'client_work' },

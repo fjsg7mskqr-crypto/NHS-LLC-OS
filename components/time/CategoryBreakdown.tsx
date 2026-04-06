@@ -5,7 +5,7 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import { CATEGORY_COLORS, CATEGORY_LABELS, formatMinutes } from '@/lib/utils'
 import type { TimeEntry } from '@/types'
 
-const CATEGORIES = ['client_work', 'drive_time', 'prep', 'errand', 'admin'] as const
+const CATEGORIES = ['client_work', 'drive_time', 'prep', 'admin'] as const
 interface CategoryTotal {
   name: (typeof CATEGORIES)[number]
   label: string

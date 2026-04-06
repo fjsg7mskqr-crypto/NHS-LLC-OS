@@ -7,7 +7,7 @@ import { format } from 'date-fns'
 import ErrorBanner from '@/components/ui/ErrorBanner'
 import type { CategoryType, Client, Job, TimeEntry } from '@/types'
 
-const CATEGORIES: CategoryType[] = ['client_work', 'drive_time', 'errand', 'prep', 'admin', 'equipment_maint']
+const CATEGORIES: CategoryType[] = ['client_work', 'drive_time', 'prep', 'admin', 'equipment_maint']
 
 interface TimeEntryFormState {
   date: string

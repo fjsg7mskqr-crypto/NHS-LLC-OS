@@ -19,7 +19,7 @@ const PRESET_LABELS: Record<DatePreset, string> = {
   custom: 'Custom',
 }
 
-const CATEGORIES: CategoryType[] = ['client_work', 'drive_time', 'errand', 'prep', 'admin', 'equipment_maint']
+const CATEGORIES: CategoryType[] = ['client_work', 'drive_time', 'prep', 'admin', 'equipment_maint']
 
 function getPresetRange(preset: DatePreset): { start: string; end: string } {
   const now = new Date()

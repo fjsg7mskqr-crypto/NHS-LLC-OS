@@ -216,7 +216,7 @@ export function getDiscordApplicationCommands() {
           choices: [
             { name: 'Client Work', value: 'client_work' },
             { name: 'Drive Time', value: 'drive_time' },
-            { name: 'Errand', value: 'errand' },
+
             { name: 'Prep', value: 'prep' },
             { name: 'Admin', value: 'admin' },
             { name: 'Equipment Maintenance', value: 'equipment_maint' },
@@ -247,7 +247,7 @@ export function getDiscordApplicationCommands() {
           choices: [
             { name: 'Client Work', value: 'client_work' },
             { name: 'Drive Time', value: 'drive_time' },
-            { name: 'Errand', value: 'errand' },
+
             { name: 'Prep', value: 'prep' },
             { name: 'Admin', value: 'admin' },
             { name: 'Equipment Maintenance', value: 'equipment_maint' },

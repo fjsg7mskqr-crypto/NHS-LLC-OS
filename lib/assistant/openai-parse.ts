@@ -22,7 +22,7 @@ const ACTION_TOOLS = [
       properties: {
         category: {
           type: 'string',
-          enum: ['client_work', 'drive_time', 'errand', 'prep', 'admin', 'equipment_maint'],
+          enum: ['client_work', 'drive_time', 'prep', 'admin', 'equipment_maint'],
         },
         client_id: { type: ['string', 'null'] },
         property_id: { type: ['string', 'null'] },
@@ -61,7 +61,7 @@ const ACTION_TOOLS = [
         end_time: { type: ['string', 'null'], description: 'ISO 8601 end time. Use with start_time when user gives specific times.' },
         category: {
           type: 'string',
-          enum: ['client_work', 'drive_time', 'errand', 'prep', 'admin', 'equipment_maint'],
+          enum: ['client_work', 'drive_time', 'prep', 'admin', 'equipment_maint'],
         },
         client_id: { type: ['string', 'null'] },
         property_id: { type: ['string', 'null'] },
