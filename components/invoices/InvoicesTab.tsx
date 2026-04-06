@@ -25,11 +25,18 @@ export default function InvoicesTab() {
     setError(null)
     Promise.all([
       fetch('/api/invoices').then(r => r.ok ? r.json() : []),
-      fetch('/api/square-invoices').then(r => r.ok ? r.json() : []),
+      fetch('/api/square-invoices').then(async r => {
+        if (!r.ok) {
+          const text = await r.text().catch(() => '')
+          console.error('square-invoices fetch failed:', r.status, text)
+          return []
+        }
+        return r.json()
+      }),
     ])
       .then(([manual, square]) => {
-        setInvoices(manual || [])
-        setSquareInvoices(square || [])
+        setInvoices(Array.isArray(manual) ? manual : [])
+        setSquareInvoices(Array.isArray(square) ? square : [])
       })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false))

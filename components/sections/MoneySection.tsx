@@ -17,6 +17,7 @@ export default function MoneySection() {
   const [active, setActive] = useState<TabId>('invoices')
   const [syncing, setSyncing] = useState(false)
   const [syncResult, setSyncResult] = useState<string | null>(null)
+  const [refreshKey, setRefreshKey] = useState(0)
 
   async function handleSquareSync() {
     setSyncing(true)
@@ -28,6 +29,7 @@ export default function MoneySection() {
         setSyncResult(data.error || 'Sync failed')
       } else {
         setSyncResult(`Synced ${data.synced}, skipped ${data.skipped}${data.errors?.length ? `, ${data.errors.length} errors` : ''}`)
+        setRefreshKey(k => k + 1)
       }
     } catch {
       setSyncResult('Network error')
@@ -58,7 +60,7 @@ export default function MoneySection() {
         </div>
       )}
       <div className="tab-content" key={active}>
-        {active === 'invoices' && <InvoicesTab />}
+        {active === 'invoices' && <InvoicesTab key={refreshKey} />}
         {active === 'reports' && <ReportsTab />}
       </div>
     </div>
