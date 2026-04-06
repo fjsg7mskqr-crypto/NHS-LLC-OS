@@ -92,7 +92,7 @@ export default function TimeEntryForm({
     try {
       const startTime = `${form.date}T${form.startTime}:00`
       const endTime = `${form.date}T${form.endTime}:00`
-      const billable = form.billable && form.category === 'client_work'
+      const billable = form.billable
       const hourlyRate = billable ? (selectedClient?.default_hourly_rate || null) : null
 
       if (isEdit) {
@@ -192,6 +192,10 @@ export default function TimeEntryForm({
               </select>
             </div>
           )}
+          <div className="flex items-center gap-2">
+            <input id="te-billable" type="checkbox" checked={form.billable} onChange={e => set('billable', e.target.checked)} className="w-4 h-4 rounded border-slate-600 bg-slate-800 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-0" />
+            <label htmlFor="te-billable" className="text-sm text-slate-300">Billable</label>
+          </div>
           <div>
             <label htmlFor="te-notes" className="block text-xs text-slate-500 mb-1">Notes</label>
             <textarea id="te-notes" value={form.notes} onChange={e => set('notes', e.target.value)} rows={3} placeholder="What did you work on?" className={`${inputClass} resize-none`} />

@@ -34,7 +34,7 @@ export const GET = withAuthenticatedRoute(async function GET(request: NextReques
   } else if (startDate && endDate) {
     query = query
       .gte('start_time', `${startDate}T00:00:00`)
-      .lt('start_time', `${endDate}T23:59:59`)
+      .lte('start_time', `${endDate}T23:59:59`)
   }
 
   if (jobId) query = query.eq('job_id', jobId)
