@@ -181,12 +181,44 @@ export async function chooseAssistantActionWithOpenAI(input: {
   message: string
   actor: AssistantActor
   timezone?: string
+  supabase?: import('@supabase/supabase-js').SupabaseClient
 }): Promise<ToolCallResult> {
   const tz = input.timezone || 'America/Detroit'
   const nowLocal = new Date().toLocaleString('en-US', { timeZone: tz })
   const todayISO = new Date(
     new Date().toLocaleString('en-US', { timeZone: tz })
   ).toISOString().slice(0, 10)
+
+  // Fetch known entity names so OpenAI can recognize them
+  let entityContext = ''
+  if (input.supabase) {
+    try {
+      const [clients, jobs, properties] = await Promise.all([
+        input.supabase.from('clients').select('name').is('deleted_at', null).order('name').limit(50),
+        input.supabase.from('jobs').select('title, client:clients(name)').is('deleted_at', null).in('status', ['scheduled', 'in_progress', 'active']).order('title').limit(50),
+        input.supabase.from('properties').select('name, client:clients(name)').order('name').limit(50),
+      ])
+      const parts: string[] = []
+      if (clients.data?.length) {
+        parts.push(`Known clients: ${clients.data.map(c => c.name).join(', ')}.`)
+      }
+      if (jobs.data?.length) {
+        parts.push(`Active jobs: ${jobs.data.map(j => {
+          const client = j.client as unknown as { name: string } | null
+          return `${j.title}${client ? ` (${client.name})` : ''}`
+        }).join(', ')}.`)
+      }
+      if (properties.data?.length) {
+        parts.push(`Properties: ${properties.data.map(p => {
+          const client = p.client as unknown as { name: string } | null
+          return `${p.name}${client ? ` (${client.name})` : ''}`
+        }).join(', ')}.`)
+      }
+      if (parts.length) entityContext = parts.join(' ')
+    } catch {
+      // Non-fatal — proceed without entity context
+    }
+  }
 
   const response = await fetch('https://api.openai.com/v1/responses', {
     method: 'POST',
@@ -206,11 +238,14 @@ export async function chooseAssistantActionWithOpenAI(input: {
         'When the user provides specific start and end times (like "9:30 AM to 10:45 AM"), use start_time and end_time as ISO 8601 strings for today in their timezone. Do NOT convert to minutes — pass the exact times.',
         'When you need clarification, ask ONE simple follow-up question in plain English. Never list raw field names or IDs.',
         'For example, ask "How long did you work?" not "Please provide: minutes, category, client_id...".',
-        'When referencing clients, properties, or jobs, pass the name the user said (e.g. "Miller", "Main Lodge", "deck repair"). Never guess or fabricate UUIDs — the system resolves names automatically.',
+        entityContext
+          ? `${entityContext} When the user mentions a client, property, or job, match it to one of these known names and pass the matching name in the client/property/job parameter. For example, if the user says "sleeping bear resort" and there is a client called "SBR", pass client="SBR".`
+          : '',
+        'When referencing clients, properties, or jobs, always pass the name in the client/property/job parameter — never put it in notes. Never guess or fabricate UUIDs — the system resolves names automatically.',
         'Never invent clients, properties, jobs, tasks, or dates.',
         'If the user asks about billing this month, use get_billable_summary with period=month.',
         'If the user asks for status, use get_status.',
-      ].join(' '),
+      ].filter(Boolean).join(' '),
       input: input.message,
       tools: ACTION_TOOLS,
     }),

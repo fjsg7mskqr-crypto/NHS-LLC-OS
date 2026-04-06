@@ -36,6 +36,7 @@ export async function POST(request: NextRequest) {
       message: body.message,
       actor,
       timezone: context.timezone,
+      supabase: context.supabase,
     })
 
     if (chosen.type === 'message') {
