@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { CalendarBlockType } from '@/types'
 
-export const VALID_BLOCK_TYPES: CalendarBlockType[] = ['booking', 'job_day', 'unavailable']
+export const VALID_BLOCK_TYPES: CalendarBlockType[] = ['booking', 'job_day', 'sbr_booking', 'unavailable']
 
 export type CreateCalendarBlockInput = {
   property_id?: string | null

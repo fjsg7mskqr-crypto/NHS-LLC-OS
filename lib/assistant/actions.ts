@@ -99,13 +99,16 @@ const clockInAction: AssistantActionDefinition<ClockInArgs, Awaited<ReturnType<t
       return fail(`category must be one of: ${VALID_CATEGORIES.join(', ')}`)
     }
 
+    const category = (categoryRaw as ClockInArgs['category']) || 'client_work'
+    const billable = optionalBoolean(input.billable) ?? (category === 'client_work')
+
     return ok({
-      category: (categoryRaw as ClockInArgs['category']) || 'client_work',
+      category,
       client_id: optionalString(input.client_id),
       job_id: optionalString(input.job_id),
       property_id: optionalString(input.property_id),
       notes: optionalString(input.notes),
-      billable: optionalBoolean(input.billable),
+      billable,
       hourly_rate: optionalNumber(input.hourly_rate),
     })
   },
@@ -167,6 +170,8 @@ const logTimeAction: AssistantActionDefinition<ValidatedLogTimeArgs, Awaited<Ret
         ? buildTimeRangeFromMinutes(minutes)
         : { start_time: String(start), end_time: String(end) }
 
+    const billable = optionalBoolean(input.billable) ?? (category === 'client_work')
+
     return ok({
       start_time: range.start_time,
       end_time: range.end_time,
@@ -176,7 +181,7 @@ const logTimeAction: AssistantActionDefinition<ValidatedLogTimeArgs, Awaited<Ret
       job_id: optionalString(input.job_id),
       property_id: optionalString(input.property_id),
       notes: optionalString(input.notes),
-      billable: optionalBoolean(input.billable),
+      billable,
       hourly_rate: optionalNumber(input.hourly_rate),
       source: optionalString(input.source) || 'assistant',
     })

@@ -2,7 +2,7 @@ export type CategoryType = 'client_work' | 'drive_time' | 'prep' | 'admin' | 'eq
 export type JobStatus = 'scheduled' | 'in_progress' | 'active' | 'complete' | 'cancelled'
 export type Priority = 'high' | 'medium' | 'low'
 export type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled'
-export type CalendarBlockType = 'booking' | 'job_day' | 'unavailable'
+export type CalendarBlockType = 'booking' | 'job_day' | 'sbr_booking' | 'unavailable'
 
 export interface Client {
   id: string

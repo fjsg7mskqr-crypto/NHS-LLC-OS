@@ -47,7 +47,12 @@ async function resolveSingleByIdOrName(
   }
 
   if (data.length > 1) {
-    throw new Error(`Multiple ${label}s matched "${value}". Use a more specific value or an ID.`)
+    const field = table === 'jobs' || table === 'tasks' ? 'title' : 'name'
+    const names = data.slice(0, 5).map((row: unknown) => {
+      const r = row as Record<string, unknown>
+      return String(r[field] || r.id)
+    })
+    throw new Error(`Multiple ${label}s matched "${value}": ${names.join(', ')}. Be more specific.`)
   }
 
   return data[0] as unknown as { id: string }

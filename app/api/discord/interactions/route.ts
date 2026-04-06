@@ -11,7 +11,10 @@ const INTERACTION_TYPE_PING = 1
 const INTERACTION_TYPE_APPLICATION_COMMAND = 2
 const CALLBACK_TYPE_PONG = 1
 const CALLBACK_TYPE_CHANNEL_MESSAGE = 4
+const CALLBACK_TYPE_DEFERRED = 5
 const EPHEMERAL_FLAG = 1 << 6
+
+const SLOW_COMMANDS = new Set(['trigger_square_sync'])
 
 function interactionUserId(interaction: {
   member?: { user?: { id: string; username?: string } }
@@ -120,11 +123,45 @@ export async function POST(request: NextRequest) {
     githubLogin: username,
   })
 
-  await logDiscordEvent(context.supabase, interaction as unknown as Record<string, unknown>)
+  // Non-blocking audit log — don't let it block commands
+  logDiscordEvent(context.supabase, interaction as unknown as Record<string, unknown>).catch(() => {})
 
   const mapped = await mapDiscordInteractionToAction(interaction, context)
   if (mapped.type === 'error') {
     return discordMessage(mapped.message)
+  }
+
+  // For slow commands, defer the response and follow up via webhook
+  if (SLOW_COMMANDS.has(mapped.name)) {
+    const interactionToken = (interaction as { token?: string }).token
+    const appId = process.env.DISCORD_APPLICATION_ID
+
+    if (interactionToken && appId) {
+      // Fire and forget — run the action after deferring
+      const ctx = context
+      const m = mapped
+      void (async () => {
+        try {
+          const action = await runAssistantAction(ctx, m.name, m.args)
+          await fetch(`https://discord.com/api/v10/webhooks/${appId}/${interactionToken}/messages/@original`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content: action.reply }),
+          })
+        } catch (err) {
+          await fetch(`https://discord.com/api/v10/webhooks/${appId}/${interactionToken}/messages/@original`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content: err instanceof Error ? err.message : 'Command failed' }),
+          }).catch(() => {})
+        }
+      })()
+
+      return Response.json({
+        type: CALLBACK_TYPE_DEFERRED,
+        data: { flags: EPHEMERAL_FLAG },
+      })
+    }
   }
 
   try {
