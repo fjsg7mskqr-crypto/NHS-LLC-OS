@@ -90,8 +90,8 @@ export default function TimeEntryForm({
     setSaving(true)
     setError(null)
     try {
-      const startTime = `${form.date}T${form.startTime}:00`
-      const endTime = `${form.date}T${form.endTime}:00`
+      const startTime = new Date(`${form.date}T${form.startTime}`).toISOString()
+      const endTime = new Date(`${form.date}T${form.endTime}`).toISOString()
       const billable = form.billable
       const hourlyRate = billable ? (selectedClient?.default_hourly_rate || null) : null
 

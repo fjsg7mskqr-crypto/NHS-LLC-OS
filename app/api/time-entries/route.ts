@@ -2,6 +2,23 @@ import { type NextRequest } from 'next/server'
 import { withAuthenticatedRoute } from '@/lib/auth'
 import { createServerClient } from '@/lib/supabase-server'
 
+const TZ = 'America/Detroit'
+
+/** Convert a local date + time-of-day to a UTC ISO string */
+function localToUTC(dateStr: string, time: string) {
+  // Build an Intl formatter that tells us the UTC offset for `TZ` at the given instant
+  const naive = new Date(`${dateStr}T${time}`)
+  const utc = new Date(naive.toLocaleString('en-US', { timeZone: 'UTC' }))
+  const local = new Date(naive.toLocaleString('en-US', { timeZone: TZ }))
+  const offsetMs = utc.getTime() - local.getTime()
+  return new Date(naive.getTime() + offsetMs).toISOString()
+}
+
+/** Start of day in local TZ as UTC ISO string */
+function dayStartUTC(dateStr: string) { return localToUTC(dateStr, '00:00:00') }
+/** End of day in local TZ as UTC ISO string */
+function dayEndUTC(dateStr: string) { return localToUTC(dateStr, '23:59:59') }
+
 export const GET = withAuthenticatedRoute(async function GET(request: NextRequest) {
   const supabase = createServerClient()
   const params = request.nextUrl.searchParams
@@ -22,19 +39,19 @@ export const GET = withAuthenticatedRoute(async function GET(request: NextReques
 
   if (date) {
     query = query
-      .gte('start_time', `${date}T00:00:00`)
-      .lt('start_time', `${date}T23:59:59`)
+      .gte('start_time', dayStartUTC(date))
+      .lte('start_time', dayEndUTC(date))
   } else if (weekStart) {
     const end = new Date(weekStart)
     end.setDate(end.getDate() + 7)
     const endStr = end.toISOString().split('T')[0]
     query = query
-      .gte('start_time', `${weekStart}T00:00:00`)
-      .lt('start_time', `${endStr}T00:00:00`)
+      .gte('start_time', dayStartUTC(weekStart))
+      .lt('start_time', dayStartUTC(endStr))
   } else if (startDate && endDate) {
     query = query
-      .gte('start_time', `${startDate}T00:00:00`)
-      .lte('start_time', `${endDate}T23:59:59`)
+      .gte('start_time', dayStartUTC(startDate))
+      .lte('start_time', dayEndUTC(endDate))
   }
 
   if (jobId) query = query.eq('job_id', jobId)

@@ -2,6 +2,19 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { endOfMonth, endOfWeek, format, startOfMonth, startOfWeek } from 'date-fns'
 import type { CategoryType } from '@/types'
 
+const TZ = 'America/Detroit'
+
+function localToUTC(dateStr: string, time: string) {
+  const naive = new Date(`${dateStr}T${time}`)
+  const utc = new Date(naive.toLocaleString('en-US', { timeZone: 'UTC' }))
+  const local = new Date(naive.toLocaleString('en-US', { timeZone: TZ }))
+  const offsetMs = utc.getTime() - local.getTime()
+  return new Date(naive.getTime() + offsetMs).toISOString()
+}
+
+function dayStartUTC(dateStr: string) { return localToUTC(dateStr, '00:00:00') }
+function dayEndUTC(dateStr: string) { return localToUTC(dateStr, '23:59:59') }
+
 export const VALID_CATEGORIES: CategoryType[] = [
   'client_work',
   'drive_time',
@@ -206,8 +219,8 @@ export async function getHoursSummary(
   const { data, error } = await supabase
     .from('time_entries')
     .select('duration_minutes')
-    .gte('start_time', `${start}T00:00:00`)
-    .lte('start_time', `${end}T23:59:59`)
+    .gte('start_time', dayStartUTC(start))
+    .lte('start_time', dayEndUTC(end))
 
   if (error) {
     throw new Error(error.message)
@@ -236,8 +249,8 @@ export async function getBillableSummary(
   const { data, error } = await supabase
     .from('time_entries')
     .select('billable_amount, duration_minutes')
-    .gte('start_time', `${start}T00:00:00`)
-    .lte('start_time', `${end}T23:59:59`)
+    .gte('start_time', dayStartUTC(start))
+    .lte('start_time', dayEndUTC(end))
     .eq('billable', true)
 
   if (error) {
