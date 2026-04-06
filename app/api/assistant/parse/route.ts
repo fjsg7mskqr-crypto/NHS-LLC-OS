@@ -46,24 +46,36 @@ export async function POST(request: NextRequest) {
       } satisfies AssistantResponse)
     }
 
-    const action = await runAssistantAction(context, chosen.name, chosen.args)
+    // Normalize single/multi into an array
+    const actionList = chosen.type === 'actions'
+      ? chosen.actions
+      : [{ name: chosen.name, args: chosen.args }]
 
-    if (!action.readOnly) {
-      await logAssistantEvent(context.supabase, {
-        actor,
-        actionName: action.name,
-        args: action.args,
-        result: action.result,
-      })
+    const replies: string[] = []
+    const results: Array<{ name: string; args: Record<string, unknown>; result: unknown }> = []
+
+    for (const item of actionList) {
+      const action = await runAssistantAction(context, item.name, item.args)
+      replies.push(action.reply)
+      results.push({ name: action.name, args: action.args, result: action.result })
+
+      if (!action.readOnly) {
+        await logAssistantEvent(context.supabase, {
+          actor,
+          actionName: action.name,
+          args: action.args,
+          result: action.result,
+        })
+      }
     }
 
     return Response.json({
-      reply: action.reply,
-      action: {
-        name: action.name,
-        args: action.args,
-        result: action.result,
-      },
+      reply: replies.join('\n'),
+      action: results[0] ? {
+        name: results[0].name as AssistantResponse['action'] extends { name: infer N } ? N : never,
+        args: results[0].args,
+        result: results.length === 1 ? results[0].result : results.map(r => r.result),
+      } : undefined,
     } satisfies AssistantResponse)
   } catch (error) {
     return Response.json(

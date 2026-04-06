@@ -7,6 +7,10 @@ type ToolCallResult =
       args: Record<string, unknown>
     }
   | {
+      type: 'actions'
+      actions: Array<{ name: AssistantActionName; args: Record<string, unknown> }>
+    }
+  | {
       type: 'message'
       message: string
     }
@@ -231,7 +235,7 @@ export async function chooseAssistantActionWithOpenAI(input: {
       instructions: [
         'You are a friendly operations assistant for a landscaping/field-service business.',
         'You talk like a helpful coworker, not a robot. Keep replies short and casual.',
-        'Choose exactly one function when the user intent is clear and executable.',
+        'Choose one or more functions when the user intent is clear and executable. If the user describes multiple entries or actions in one message (e.g. "log 9 to 10 for SBR and 10:15 to 11:30 drive time"), call the function once per entry.',
         'Use sensible defaults: category defaults to client_work, billable defaults to true for client_work.',
         'If the user says "log time" or "time card entry", you only need to ask how long (minutes or hours) — everything else is optional.',
         `The user is in the ${tz} timezone. The current local time is ${nowLocal} and today's date is ${todayISO}.`,
@@ -266,28 +270,34 @@ export async function chooseAssistantActionWithOpenAI(input: {
     throw new Error(payload?.error?.message || 'OpenAI parse request failed')
   }
 
-  const toolCall = payload.output?.find(item => item.type === 'function_call')
-  if (toolCall?.name) {
-    let args: Record<string, unknown> = {}
-    if (toolCall.arguments) {
-      try {
-        args = JSON.parse(toolCall.arguments) as Record<string, unknown>
-      } catch {
-        throw new Error('OpenAI returned invalid function arguments')
+  const toolCalls = payload.output?.filter(item => item.type === 'function_call') || []
+
+  if (toolCalls.length > 0) {
+    const parsed = toolCalls.map(tc => {
+      let args: Record<string, unknown> = {}
+      if (tc.arguments) {
+        try {
+          args = JSON.parse(tc.arguments) as Record<string, unknown>
+        } catch {
+          throw new Error('OpenAI returned invalid function arguments')
+        }
       }
+
+      // Remap friendly names to _id keys for downstream resolution
+      if (args.client !== undefined) { args.client_id = args.client; delete args.client }
+      if (args.property !== undefined) { args.property_id = args.property; delete args.property }
+      if (args.job !== undefined) { args.job_id = args.job; delete args.job }
+      if (args.task !== undefined) { args.task_id = args.task; delete args.task }
+
+      return { name: tc.name as AssistantActionName, args }
+    })
+
+    // Single action → original format for backward compatibility
+    if (parsed.length === 1) {
+      return { type: 'action', name: parsed[0].name, args: parsed[0].args }
     }
 
-    // Remap friendly names to _id keys for downstream resolution
-    if (args.client !== undefined) { args.client_id = args.client; delete args.client }
-    if (args.property !== undefined) { args.property_id = args.property; delete args.property }
-    if (args.job !== undefined) { args.job_id = args.job; delete args.job }
-    if (args.task !== undefined) { args.task_id = args.task; delete args.task }
-
-    return {
-      type: 'action',
-      name: toolCall.name as AssistantActionName,
-      args,
-    }
+    return { type: 'actions', actions: parsed }
   }
 
   const message =
