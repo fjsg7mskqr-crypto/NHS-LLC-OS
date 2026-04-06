@@ -19,7 +19,7 @@ function fmtHour(h: number) {
   return h > 12 ? `${h - 12}p` : `${h}a`
 }
 
-export default function DailyTimeline({ date, onEdit }: { date: string; onEdit?: (entry: TimeEntry) => void }) {
+export default function DailyTimeline({ date, onEdit, onDelete }: { date: string; onEdit?: (entry: TimeEntry) => void; onDelete?: () => void }) {
   const [entries, setEntries] = useState<TimeEntry[]>([])
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
@@ -39,6 +39,7 @@ export default function DailyTimeline({ date, onEdit }: { date: string; onEdit?:
       if (res.ok) {
         setConfirmDeleteId(null)
         setKey(k => k + 1)
+        onDelete?.()
       }
     } catch {}
     setDeleting(false)
