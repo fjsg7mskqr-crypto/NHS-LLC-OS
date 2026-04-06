@@ -4,10 +4,13 @@ import { useState, useEffect } from 'react'
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
 import ErrorBanner from '@/components/ui/ErrorBanner'
 import CreateBlockModal from './CreateBlockModal'
-import type { CalendarBlock, Property, Job } from '@/types'
+import type { CalendarBlock, Job } from '@/types'
 
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+const DAY_NAMES_FULL = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+const DAY_NAMES_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+
+type ViewMode = 'day' | 'week' | 'month'
 
 function blockColor(type: string) {
   switch (type) {
@@ -31,10 +34,28 @@ function jobColor(status: string) {
   }
 }
 
+function fmtDate(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+function getWeekStart(d: Date) {
+  const copy = new Date(d)
+  copy.setDate(copy.getDate() - copy.getDay())
+  return copy
+}
+
+function addDays(d: Date, n: number) {
+  const copy = new Date(d)
+  copy.setDate(copy.getDate() + n)
+  return copy
+}
+
 export default function CalendarTab() {
   const today = new Date()
-  const [year, setYear] = useState(today.getFullYear())
-  const [month, setMonth] = useState(today.getMonth())
+  const todayStr = fmtDate(today)
+
+  const [viewMode, setViewMode] = useState<ViewMode>('month')
+  const [currentDate, setCurrentDate] = useState(today) // anchor date for navigation
   const [blocks, setBlocks] = useState<CalendarBlock[]>([])
   const [jobs, setJobs] = useState<Job[]>([])
   const [loading, setLoading] = useState(true)
@@ -55,45 +76,38 @@ export default function CalendarTab() {
       .finally(() => setLoading(false))
   }, [listKey])
 
-  const prevMonth = () => {
-    if (month === 0) { setMonth(11); setYear(y => y - 1) }
-    else setMonth(m => m - 1)
-  }
-  const nextMonth = () => {
-    if (month === 11) { setMonth(0); setYear(y => y + 1) }
-    else setMonth(m => m + 1)
-  }
-  const goToday = () => { setYear(today.getFullYear()); setMonth(today.getMonth()) }
-
-  // Build calendar grid
-  const firstDay = new Date(year, month, 1).getDay()
-  const daysInMonth = new Date(year, month + 1, 0).getDate()
-  const weeks: (number | null)[][] = []
-  let week: (number | null)[] = Array(firstDay).fill(null)
-
-  for (let d = 1; d <= daysInMonth; d++) {
-    week.push(d)
-    if (week.length === 7) { weeks.push(week); week = [] }
-  }
-  if (week.length > 0) {
-    while (week.length < 7) week.push(null)
-    weeks.push(week)
-  }
-
-  const dateStr = (d: number) => `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
-  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
-
-  // Which blocks/jobs overlap a given date
-  const getBlocksForDate = (d: number) => {
-    const ds = dateStr(d)
-    return blocks.filter(b => b.start_date <= ds && b.end_date >= ds)
-  }
-  const getJobsForDate = (d: number) => {
-    const ds = dateStr(d)
-    return jobs.filter(j => {
-      const jd = j.scheduled_date
-      return jd === ds
+  // Navigation
+  const navigate = (dir: -1 | 1) => {
+    setCurrentDate(prev => {
+      const d = new Date(prev)
+      if (viewMode === 'day') d.setDate(d.getDate() + dir)
+      else if (viewMode === 'week') d.setDate(d.getDate() + dir * 7)
+      else { d.setMonth(d.getMonth() + dir) }
+      return d
     })
+  }
+  const goToday = () => setCurrentDate(today)
+
+  const year = currentDate.getFullYear()
+  const month = currentDate.getMonth()
+
+  // Helpers
+  const getBlocksForDateStr = (ds: string) => blocks.filter(b => b.start_date <= ds && b.end_date >= ds)
+  const getJobsForDateStr = (ds: string) => jobs.filter(j => j.scheduled_date === ds)
+
+  // Header title
+  const headerTitle = () => {
+    if (viewMode === 'day') {
+      return currentDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
+    }
+    if (viewMode === 'week') {
+      const ws = getWeekStart(currentDate)
+      const we = addDays(ws, 6)
+      const start = ws.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+      const end = we.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+      return `${start} - ${end}`
+    }
+    return `${MONTH_NAMES[month]} ${year}`
   }
 
   // Sidebar detail
@@ -101,17 +115,177 @@ export default function CalendarTab() {
   const selectedJobs = selectedDate ? jobs.filter(j => j.scheduled_date === selectedDate) : []
 
   const activeJobs = jobs.filter(j => j.status === 'scheduled' || j.status === 'in_progress').length
-  const thisMonthBlocks = blocks.filter(b => {
-    const ms = `${year}-${String(month + 1).padStart(2, '0')}`
-    return b.start_date.startsWith(ms) || b.end_date.startsWith(ms) || (b.start_date < ms + '-01' && b.end_date >= ms + '-01')
-  })
+
+  // Build month grid
+  const buildMonthGrid = () => {
+    const firstDay = new Date(year, month, 1).getDay()
+    const daysInMonth = new Date(year, month + 1, 0).getDate()
+    const weeks: (number | null)[][] = []
+    let week: (number | null)[] = Array(firstDay).fill(null)
+    for (let d = 1; d <= daysInMonth; d++) {
+      week.push(d)
+      if (week.length === 7) { weeks.push(week); week = [] }
+    }
+    if (week.length > 0) {
+      while (week.length < 7) week.push(null)
+      weeks.push(week)
+    }
+    return weeks
+  }
+
+  const dateStr = (d: number) => `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+
+  // Event chip renderer
+  const renderChips = (ds: string, limit: number) => {
+    const dayBlocks = getBlocksForDateStr(ds)
+    const dayJobs = getJobsForDateStr(ds)
+    const total = dayBlocks.length + dayJobs.length
+    return (
+      <div className="mt-1 space-y-0.5">
+        {dayBlocks.slice(0, limit).map(b => (
+          <div key={b.id} className={`text-[10px] px-1.5 py-0.5 rounded border truncate ${blockColor(b.type)}`}>
+            {BLOCK_LABELS[b.type] || b.type}{b.property ? `: ${b.property.name}` : ''}
+          </div>
+        ))}
+        {dayJobs.slice(0, Math.max(0, limit - dayBlocks.length)).map(j => (
+          <div key={j.id} className={`text-[10px] px-1.5 py-0.5 rounded border truncate ${jobColor(j.status)}`}>
+            {j.title}
+          </div>
+        ))}
+        {total > limit && (
+          <div className="text-[10px] text-slate-500 px-1">+{total - limit} more</div>
+        )}
+      </div>
+    )
+  }
+
+  // Detailed event list for day/week views
+  const renderEventList = (ds: string) => {
+    const dayBlocks = getBlocksForDateStr(ds)
+    const dayJobs = getJobsForDateStr(ds)
+    if (dayBlocks.length === 0 && dayJobs.length === 0) {
+      return <p className="text-xs text-slate-600 italic py-2">No events</p>
+    }
+    return (
+      <div className="space-y-1.5 py-1">
+        {dayBlocks.map(b => (
+          <div key={b.id} className={`text-xs px-2.5 py-1.5 rounded-lg border ${blockColor(b.type)}`}>
+            <span className="font-medium">{BLOCK_LABELS[b.type] || b.type}</span>
+            {b.property && <span className="opacity-80"> - {b.property.name}</span>}
+            {b.notes && <p className="opacity-70 mt-0.5 text-[11px]">{b.notes}</p>}
+            <p className="opacity-50 mt-0.5 text-[10px]">{b.start_date} to {b.end_date}</p>
+          </div>
+        ))}
+        {dayJobs.map(j => (
+          <div key={j.id} className={`text-xs px-2.5 py-1.5 rounded-lg border ${jobColor(j.status)}`}>
+            <span className="font-medium">{j.title}</span>
+            {j.client && <span className="opacity-80"> - {j.client.name}</span>}
+            <p className="opacity-50 mt-0.5 text-[10px]">{j.status.replace('_', ' ')}</p>
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  // --- Views ---
+
+  const renderDayView = () => {
+    const ds = fmtDate(currentDate)
+    const isToday = ds === todayStr
+    return (
+      <div className="p-5">
+        <div className="flex items-center gap-3 mb-4">
+          <span className={`inline-flex items-center justify-center w-10 h-10 rounded-full text-lg font-semibold ${isToday ? 'bg-emerald-500 text-black' : 'bg-slate-800 text-slate-300'}`}>
+            {currentDate.getDate()}
+          </span>
+          <div>
+            <p className="text-sm font-medium text-white">{DAY_NAMES_FULL[currentDate.getDay()]}</p>
+            <p className="text-xs text-slate-500">{currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</p>
+          </div>
+        </div>
+        {renderEventList(ds)}
+      </div>
+    )
+  }
+
+  const renderWeekView = () => {
+    const weekStart = getWeekStart(currentDate)
+    const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))
+    return (
+      <div>
+        <div className="grid grid-cols-7 border-b border-slate-800">
+          {days.map(d => {
+            const ds = fmtDate(d)
+            const isToday = ds === todayStr
+            const isSelected = ds === selectedDate
+            return (
+              <div
+                key={ds}
+                onClick={() => setSelectedDate(ds === selectedDate ? null : ds)}
+                className={`px-2 py-3 text-center cursor-pointer border-r border-slate-800/50 last:border-r-0 transition-colors ${isSelected ? 'bg-slate-800/60' : 'hover:bg-slate-800/30'}`}
+              >
+                <p className="text-[10px] text-slate-500 uppercase font-medium">{DAY_NAMES_SHORT[d.getDay()]}</p>
+                <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold mt-1 ${isToday ? 'bg-emerald-500 text-black' : 'text-slate-300'}`}>
+                  {d.getDate()}
+                </span>
+              </div>
+            )
+          })}
+        </div>
+        <div className="grid grid-cols-7 min-h-[320px]">
+          {days.map(d => {
+            const ds = fmtDate(d)
+            const isSelected = ds === selectedDate
+            return (
+              <div
+                key={ds}
+                onClick={() => setSelectedDate(ds === selectedDate ? null : ds)}
+                className={`border-r border-slate-800/50 last:border-r-0 p-2 cursor-pointer transition-colors ${isSelected ? 'bg-slate-800/60' : 'hover:bg-slate-800/30'}`}
+              >
+                {renderEventList(ds)}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    )
+  }
+
+  const renderMonthView = () => {
+    const weeks = buildMonthGrid()
+    return (
+      <div className="grid grid-cols-7">
+        {DAY_NAMES_SHORT.map(d => (
+          <div key={d} className="px-2 py-2 text-center text-xs font-medium text-slate-500 border-b border-slate-800">{d}</div>
+        ))}
+        {weeks.flat().map((day, i) => {
+          if (day === null) return <div key={`empty-${i}`} className="min-h-20 border-b border-r border-slate-800/50 bg-slate-950/30" />
+          const ds = dateStr(day)
+          const isToday = ds === todayStr
+          const isSelected = ds === selectedDate
+          return (
+            <div
+              key={ds}
+              onClick={() => setSelectedDate(ds === selectedDate ? null : ds)}
+              className={`min-h-20 border-b border-r border-slate-800/50 p-1.5 cursor-pointer transition-colors ${isSelected ? 'bg-slate-800/60' : 'hover:bg-slate-800/30'}`}
+            >
+              <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-medium ${isToday ? 'bg-emerald-500 text-black' : 'text-slate-400'}`}>
+                {day}
+              </span>
+              {renderChips(ds, 2)}
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-white">Calendar</h1>
-          <p className="text-sm text-slate-500">{loading ? 'Loading...' : `${blocks.length} blocks · ${activeJobs} active jobs`}</p>
+          <p className="text-sm text-slate-500">{loading ? 'Loading...' : `${blocks.length} blocks \u00b7 ${activeJobs} active jobs`}</p>
         </div>
         <button
           onClick={() => setShowCreate(true)}
@@ -125,8 +299,8 @@ export default function CalendarTab() {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 stagger-grid">
         <div className="metric-card metric-card--emerald rounded-xl border border-slate-800 bg-slate-900/50 p-4">
-          <p className="text-xs text-slate-500 mb-1">This Month Blocks</p>
-          <p className="text-lg font-semibold text-emerald-400 glow-emerald">{thisMonthBlocks.length}</p>
+          <p className="text-xs text-slate-500 mb-1">Total Blocks</p>
+          <p className="text-lg font-semibold text-emerald-400 glow-emerald">{blocks.length}</p>
         </div>
         <div className="metric-card metric-card--blue rounded-xl border border-slate-800 bg-slate-900/50 p-4">
           <p className="text-xs text-slate-500 mb-1">Scheduled Jobs</p>
@@ -145,57 +319,42 @@ export default function CalendarTab() {
       <div className="flex gap-6 flex-col lg:flex-row">
         {/* Calendar Grid */}
         <div className="flex-1 rounded-xl border border-slate-800 bg-slate-900/50 overflow-hidden">
+          {/* Header with nav + view switcher */}
           <div className="px-5 py-4 border-b border-slate-800 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <button onClick={prevMonth} className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors"><ChevronLeft className="w-4 h-4" /></button>
-              <h2 className="text-sm font-semibold text-white min-w-36 text-center">{MONTH_NAMES[month]} {year}</h2>
-              <button onClick={nextMonth} className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors"><ChevronRight className="w-4 h-4" /></button>
+              <button onClick={() => navigate(-1)} className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors"><ChevronLeft className="w-4 h-4" /></button>
+              <h2 className="text-sm font-semibold text-white min-w-48 text-center">{headerTitle()}</h2>
+              <button onClick={() => navigate(1)} className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors"><ChevronRight className="w-4 h-4" /></button>
             </div>
-            <button onClick={goToday} className="px-3 py-1.5 rounded-lg border border-slate-700 text-xs text-slate-400 hover:text-slate-200 hover:border-slate-600 transition-colors">Today</button>
+            <div className="flex items-center gap-2">
+              {/* View mode toggle */}
+              <div className="flex rounded-lg border border-slate-700 overflow-hidden">
+                {(['day', 'week', 'month'] as ViewMode[]).map(mode => (
+                  <button
+                    key={mode}
+                    onClick={() => setViewMode(mode)}
+                    className={`px-3 py-1.5 text-xs font-medium capitalize transition-colors ${
+                      viewMode === mode
+                        ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                    } ${mode !== 'day' ? 'border-l border-slate-700' : ''}`}
+                  >
+                    {mode}
+                  </button>
+                ))}
+              </div>
+              <button onClick={goToday} className="px-3 py-1.5 rounded-lg border border-slate-700 text-xs text-slate-400 hover:text-slate-200 hover:border-slate-600 transition-colors">Today</button>
+            </div>
           </div>
-          <div className="grid grid-cols-7">
-            {DAY_NAMES.map(d => (
-              <div key={d} className="px-2 py-2 text-center text-xs font-medium text-slate-500 border-b border-slate-800">{d}</div>
-            ))}
-            {weeks.flat().map((day, i) => {
-              if (day === null) return <div key={`empty-${i}`} className="min-h-20 border-b border-r border-slate-800/50 bg-slate-950/30" />
-              const ds = dateStr(day)
-              const isToday = ds === todayStr
-              const isSelected = ds === selectedDate
-              const dayBlocks = getBlocksForDate(day)
-              const dayJobs = getJobsForDate(day)
-              return (
-                <div
-                  key={ds}
-                  onClick={() => setSelectedDate(ds === selectedDate ? null : ds)}
-                  className={`min-h-20 border-b border-r border-slate-800/50 p-1.5 cursor-pointer transition-colors ${isSelected ? 'bg-slate-800/60' : 'hover:bg-slate-800/30'}`}
-                >
-                  <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-medium ${isToday ? 'bg-emerald-500 text-black' : 'text-slate-400'}`}>
-                    {day}
-                  </span>
-                  <div className="mt-1 space-y-0.5">
-                    {dayBlocks.slice(0, 2).map(b => (
-                      <div key={b.id} className={`text-[10px] px-1.5 py-0.5 rounded border truncate ${blockColor(b.type)}`}>
-                        {BLOCK_LABELS[b.type] || b.type}{b.property ? `: ${b.property.name}` : ''}
-                      </div>
-                    ))}
-                    {dayJobs.slice(0, 2).map(j => (
-                      <div key={j.id} className={`text-[10px] px-1.5 py-0.5 rounded border truncate ${jobColor(j.status)}`}>
-                        {j.title}
-                      </div>
-                    ))}
-                    {(dayBlocks.length + dayJobs.length > 4) && (
-                      <div className="text-[10px] text-slate-500 px-1">+{dayBlocks.length + dayJobs.length - 4} more</div>
-                    )}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
+
+          {/* View content */}
+          {viewMode === 'day' && renderDayView()}
+          {viewMode === 'week' && renderWeekView()}
+          {viewMode === 'month' && renderMonthView()}
         </div>
 
-        {/* Day detail sidebar */}
-        {selectedDate && (
+        {/* Day detail sidebar (shown in week/month views when a date is selected) */}
+        {selectedDate && viewMode !== 'day' && (
           <div className="lg:w-72 rounded-xl border border-slate-800 bg-slate-900/50 p-5 space-y-4 self-start">
             <h3 className="text-sm font-semibold text-white">
               {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
