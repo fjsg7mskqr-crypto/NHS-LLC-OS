@@ -1,19 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { endOfMonth, endOfWeek, format, startOfMonth, startOfWeek } from 'date-fns'
 import type { CategoryType } from '@/types'
-
-const TZ = 'America/Detroit'
-
-function localToUTC(dateStr: string, time: string) {
-  const naive = new Date(`${dateStr}T${time}`)
-  const utc = new Date(naive.toLocaleString('en-US', { timeZone: 'UTC' }))
-  const local = new Date(naive.toLocaleString('en-US', { timeZone: TZ }))
-  const offsetMs = utc.getTime() - local.getTime()
-  return new Date(naive.getTime() + offsetMs).toISOString()
-}
-
-function dayStartUTC(dateStr: string) { return localToUTC(dateStr, '00:00:00') }
-function dayEndUTC(dateStr: string) { return localToUTC(dateStr, '23:59:59') }
+import { dayStartUTC, dayEndUTC } from '@/lib/timezone'
 
 export const VALID_CATEGORIES: CategoryType[] = [
   'client_work',

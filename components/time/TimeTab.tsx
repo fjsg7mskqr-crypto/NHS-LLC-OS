@@ -6,6 +6,7 @@ import {
   startOfWeek, endOfWeek, addDays, addWeeks, addMonths,
   format, startOfMonth, endOfMonth, parseISO,
 } from 'date-fns'
+import { utcToLocalDate } from '@/lib/timezone'
 import DailyTimeline from './DailyTimeline'
 import WeeklyChart from './WeeklyChart'
 import CategoryBreakdown from './CategoryBreakdown'
@@ -158,8 +159,9 @@ export default function TimeTab() {
   const entryCounts = useMemo(() => {
     const counts: Record<string, number> = {}
     entries.forEach(e => {
-      const d = e.start_time?.slice(0, 10)
-      if (d) counts[d] = (counts[d] || 0) + 1
+      if (!e.start_time) return
+      const d = utcToLocalDate(e.start_time)
+      counts[d] = (counts[d] || 0) + 1
     })
     return counts
   }, [entries])

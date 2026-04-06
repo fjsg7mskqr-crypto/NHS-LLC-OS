@@ -96,8 +96,12 @@ export default function TimeEntryForm({
     setSaving(true)
     setError(null)
     try {
-      const startTime = new Date(`${form.date}T${form.startTime}`).toISOString()
-      const endTime = new Date(`${form.date}T${form.endTime}`).toISOString()
+      const startDt = new Date(`${form.date}T${form.startTime}`)
+      const endDt = new Date(`${form.date}T${form.endTime}`)
+      // Handle cross-midnight: if end is before start, push end to the next day
+      if (endDt <= startDt) endDt.setDate(endDt.getDate() + 1)
+      const startTime = startDt.toISOString()
+      const endTime = endDt.toISOString()
       const billable = form.billable
       const hourlyRate = billable ? (selectedClient?.default_hourly_rate || null) : null
 

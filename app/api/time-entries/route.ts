@@ -1,23 +1,7 @@
 import { type NextRequest } from 'next/server'
 import { withAuthenticatedRoute } from '@/lib/auth'
 import { createServerClient } from '@/lib/supabase-server'
-
-const TZ = 'America/Detroit'
-
-/** Convert a local date + time-of-day to a UTC ISO string */
-function localToUTC(dateStr: string, time: string) {
-  // Build an Intl formatter that tells us the UTC offset for `TZ` at the given instant
-  const naive = new Date(`${dateStr}T${time}`)
-  const utc = new Date(naive.toLocaleString('en-US', { timeZone: 'UTC' }))
-  const local = new Date(naive.toLocaleString('en-US', { timeZone: TZ }))
-  const offsetMs = utc.getTime() - local.getTime()
-  return new Date(naive.getTime() + offsetMs).toISOString()
-}
-
-/** Start of day in local TZ as UTC ISO string */
-function dayStartUTC(dateStr: string) { return localToUTC(dateStr, '00:00:00') }
-/** End of day in local TZ as UTC ISO string */
-function dayEndUTC(dateStr: string) { return localToUTC(dateStr, '23:59:59') }
+import { dayStartUTC, dayEndUTC } from '@/lib/timezone'
 
 export const GET = withAuthenticatedRoute(async function GET(request: NextRequest) {
   const supabase = createServerClient()
@@ -72,13 +56,23 @@ export const PATCH = withAuthenticatedRoute(async function PATCH(request: NextRe
 
   if (!id) return Response.json({ error: 'id is required' }, { status: 400 })
 
+  // Fetch the existing entry so we can merge billable fields correctly
+  const { data: existing, error: fetchErr } = await supabase
+    .from('time_entries')
+    .select('billable, hourly_rate')
+    .eq('id', id)
+    .single()
+  if (fetchErr) return Response.json({ error: fetchErr.message }, { status: 500 })
+
   // Recalculate duration and billable amount if times changed
   if (updates.start_time && updates.end_time) {
     const startTime = new Date(updates.start_time)
     const endTime = new Date(updates.end_time)
     updates.duration_minutes = Math.round((endTime.getTime() - startTime.getTime()) / 60000)
-    if (updates.billable && updates.hourly_rate) {
-      updates.billable_amount = Math.round((updates.duration_minutes / 60) * updates.hourly_rate * 100) / 100
+    const billable = updates.billable ?? existing.billable
+    const rate = updates.hourly_rate ?? existing.hourly_rate
+    if (billable && rate) {
+      updates.billable_amount = Math.round((updates.duration_minutes / 60) * rate * 100) / 100
     } else {
       updates.billable_amount = null
     }

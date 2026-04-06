@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Pencil, Trash2 } from 'lucide-react'
 import { CATEGORY_COLORS, CATEGORY_LABELS, formatCurrency, formatMinutes } from '@/lib/utils'
+import { utcToLocalTime, utcToLocalHoursMinutes } from '@/lib/timezone'
 import type { CategoryType, TimeEntry } from '@/types'
 
 const DAY_START_HOUR = 7
@@ -10,8 +11,8 @@ const DAY_END_HOUR = 18
 const TOTAL_MINUTES = (DAY_END_HOUR - DAY_START_HOUR) * 60
 
 function timeToMins(iso: string) {
-  const d = new Date(iso)
-  return (d.getHours() * 60 + d.getMinutes()) - DAY_START_HOUR * 60
+  const { hours, minutes } = utcToLocalHoursMinutes(iso)
+  return (hours * 60 + minutes) - DAY_START_HOUR * 60
 }
 
 function fmtHour(h: number) {
@@ -85,8 +86,8 @@ export default function DailyTimeline({ date, onEdit, onDelete }: { date: string
             <div className="mt-4 space-y-2">
               {entries.map(entry => {
                 const color = CATEGORY_COLORS[entry.category as CategoryType]
-                const start = new Date(entry.start_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
-                const end = entry.end_time ? new Date(entry.end_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) : '—'
+                const start = utcToLocalTime(entry.start_time)
+                const end = entry.end_time ? utcToLocalTime(entry.end_time) : '—'
                 const value = entry.billable && entry.billable_amount ? formatCurrency(entry.billable_amount) : null
                 return (
                   <div key={entry.id} className="flex items-center gap-3 p-3 rounded-lg bg-slate-800/40 hover:bg-slate-800/60 transition-colors group">
