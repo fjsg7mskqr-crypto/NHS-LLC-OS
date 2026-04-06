@@ -14,6 +14,18 @@ export async function syncSquareInvoices(supabase: SupabaseClient) {
     throw new Error('SQUARE_LOCATION_ID is not configured')
   }
 
+  const SQUARE_STATUS_MAP: Record<string, string> = {
+    DRAFT: 'draft',
+    UNPAID: 'unpaid',
+    PAID: 'paid',
+    PARTIALLY_PAID: 'partially_paid',
+    OVERDUE: 'overdue',
+    CANCELED: 'cancelled',
+    CANCELLED: 'cancelled',
+    PAYMENT_PENDING: 'unpaid',
+    SCHEDULED: 'draft',
+  }
+
   const errors: string[] = []
   let synced = 0
   let skipped = 0
@@ -37,7 +49,8 @@ export async function syncSquareInvoices(supabase: SupabaseClient) {
       if (!squareId) { skipped++; continue }
 
       try {
-        const status = inv.status ?? 'DRAFT'
+        const rawStatus = inv.status ?? 'DRAFT'
+        const status = SQUARE_STATUS_MAP[rawStatus] || 'draft'
         const primaryRecipient = inv.primaryRecipient
         const customerEmail = primaryRecipient?.emailAddress
 
