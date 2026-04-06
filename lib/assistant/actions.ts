@@ -17,6 +17,7 @@ import type {
   ValidationResult,
 } from './types'
 import { formatCurrency, formatDateTime, formatHours, joinList } from './format'
+import { resolveClientId, resolvePropertyId, resolveJobId, resolveTaskId } from './lookup'
 import {
   createClockSession,
   createTimeEntry,
@@ -449,6 +450,26 @@ export const assistantActions = {
   trigger_square_sync: triggerSquareSyncAction,
 }
 
+async function resolveEntityIds(
+  supabase: import('@supabase/supabase-js').SupabaseClient,
+  args: Record<string, unknown>
+): Promise<Record<string, unknown>> {
+  const resolved = { ...args }
+  if (typeof resolved.client_id === 'string' && resolved.client_id) {
+    resolved.client_id = await resolveClientId(supabase, resolved.client_id)
+  }
+  if (typeof resolved.property_id === 'string' && resolved.property_id) {
+    resolved.property_id = await resolvePropertyId(supabase, resolved.property_id)
+  }
+  if (typeof resolved.job_id === 'string' && resolved.job_id) {
+    resolved.job_id = await resolveJobId(supabase, resolved.job_id)
+  }
+  if (typeof resolved.task_id === 'string' && resolved.task_id) {
+    resolved.task_id = await resolveTaskId(supabase, resolved.task_id)
+  }
+  return resolved
+}
+
 export async function runAssistantAction<TName extends AssistantActionName>(
   context: import('./context').AssistantContext,
   name: TName,
@@ -460,13 +481,14 @@ export async function runAssistantAction<TName extends AssistantActionName>(
     throw new Error(validated.error)
   }
 
-  const result = await action.execute(context, validated.data)
-  const reply = action.format(result, validated.data, context)
+  const resolved = await resolveEntityIds(context.supabase, validated.data)
+  const result = await action.execute(context, resolved)
+  const reply = action.format(result, resolved, context)
 
   return {
     ok: true,
     name,
-    args: validated.data as Record<string, unknown>,
+    args: resolved as Record<string, unknown>,
     result,
     reply,
     readOnly: action.readOnly,

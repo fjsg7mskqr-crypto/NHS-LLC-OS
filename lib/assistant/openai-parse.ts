@@ -24,9 +24,9 @@ const ACTION_TOOLS = [
           type: 'string',
           enum: ['client_work', 'drive_time', 'prep', 'admin', 'equipment_maint'],
         },
-        client_id: { type: ['string', 'null'] },
-        property_id: { type: ['string', 'null'] },
-        job_id: { type: ['string', 'null'] },
+        client: { type: ['string', 'null'], description: 'Client name (e.g. "Miller")' },
+        property: { type: ['string', 'null'], description: 'Property name (e.g. "Main Lodge")' },
+        job: { type: ['string', 'null'], description: 'Job title (e.g. "deck repair")' },
         notes: { type: ['string', 'null'] },
         billable: { type: ['boolean', 'null'] },
       },
@@ -63,9 +63,9 @@ const ACTION_TOOLS = [
           type: 'string',
           enum: ['client_work', 'drive_time', 'prep', 'admin', 'equipment_maint'],
         },
-        client_id: { type: ['string', 'null'] },
-        property_id: { type: ['string', 'null'] },
-        job_id: { type: ['string', 'null'] },
+        client: { type: ['string', 'null'], description: 'Client name (e.g. "Miller")' },
+        property: { type: ['string', 'null'], description: 'Property name (e.g. "Main Lodge")' },
+        job: { type: ['string', 'null'], description: 'Job title (e.g. "deck repair")' },
         notes: { type: ['string', 'null'] },
         billable: { type: ['boolean', 'null'] },
       },
@@ -84,9 +84,9 @@ const ACTION_TOOLS = [
         title: { type: 'string' },
         priority: { type: ['string', 'null'], enum: ['high', 'medium', 'low', null] },
         due_date: { type: ['string', 'null'] },
-        client_id: { type: ['string', 'null'] },
-        property_id: { type: ['string', 'null'] },
-        job_id: { type: ['string', 'null'] },
+        client: { type: ['string', 'null'], description: 'Client name (e.g. "Miller")' },
+        property: { type: ['string', 'null'], description: 'Property name (e.g. "Main Lodge")' },
+        job: { type: ['string', 'null'], description: 'Job title (e.g. "deck repair")' },
       },
       required: ['title'],
       additionalProperties: false,
@@ -100,7 +100,7 @@ const ACTION_TOOLS = [
     parameters: {
       type: 'object',
       properties: {
-        task_id: { type: ['string', 'null'] },
+        task: { type: ['string', 'null'], description: 'Task title or partial match (e.g. "order mulch")' },
         title: { type: ['string', 'null'] },
       },
       required: [],
@@ -115,7 +115,7 @@ const ACTION_TOOLS = [
     parameters: {
       type: 'object',
       properties: {
-        property_id: { type: ['string', 'null'] },
+        property: { type: ['string', 'null'], description: 'Property name (e.g. "Main Lodge")' },
         type: { type: ['string', 'null'], enum: ['job_day', 'sbr_booking', null] },
         start_date: { type: 'string' },
         end_date: { type: 'string' },
@@ -206,6 +206,7 @@ export async function chooseAssistantActionWithOpenAI(input: {
         'When the user provides specific start and end times (like "9:30 AM to 10:45 AM"), use start_time and end_time as ISO 8601 strings for today in their timezone. Do NOT convert to minutes — pass the exact times.',
         'When you need clarification, ask ONE simple follow-up question in plain English. Never list raw field names or IDs.',
         'For example, ask "How long did you work?" not "Please provide: minutes, category, client_id...".',
+        'When referencing clients, properties, or jobs, pass the name the user said (e.g. "Miller", "Main Lodge", "deck repair"). Never guess or fabricate UUIDs — the system resolves names automatically.',
         'Never invent clients, properties, jobs, tasks, or dates.',
         'If the user asks about billing this month, use get_billable_summary with period=month.',
         'If the user asks for status, use get_status.',
@@ -240,6 +241,12 @@ export async function chooseAssistantActionWithOpenAI(input: {
         throw new Error('OpenAI returned invalid function arguments')
       }
     }
+
+    // Remap friendly names to _id keys for downstream resolution
+    if (args.client !== undefined) { args.client_id = args.client; delete args.client }
+    if (args.property !== undefined) { args.property_id = args.property; delete args.property }
+    if (args.job !== undefined) { args.job_id = args.job; delete args.job }
+    if (args.task !== undefined) { args.task_id = args.task; delete args.task }
 
     return {
       type: 'action',
