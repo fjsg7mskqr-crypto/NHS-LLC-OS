@@ -290,6 +290,41 @@ export default function TimeTab() {
             ))}
           </div>
 
+          {/* Range date inputs */}
+          {viewMode === 'custom' && (
+            <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4 space-y-3">
+              <h3 className="text-xs font-medium text-slate-500 uppercase tracking-wide">Date Range</h3>
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <label className="text-[10px] text-slate-500 mb-1 block">Start</label>
+                  <input
+                    type="date"
+                    value={customStart || ''}
+                    onChange={e => {
+                      const v = e.target.value
+                      setCustomStart(v || null)
+                      if (v) setAnchor(new Date(v + 'T12:00:00'))
+                    }}
+                    className="w-full px-2.5 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-sm text-white focus:border-emerald-500 focus:outline-none [color-scheme:dark]"
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="text-[10px] text-slate-500 mb-1 block">End</label>
+                  <input
+                    type="date"
+                    value={customEnd || ''}
+                    onChange={e => {
+                      const v = e.target.value
+                      setCustomEnd(v || null)
+                    }}
+                    className="w-full px-2.5 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-sm text-white focus:border-emerald-500 focus:outline-none [color-scheme:dark]"
+                  />
+                </div>
+              </div>
+              <p className="text-[10px] text-slate-600">Or pick dates on the calendar below</p>
+            </div>
+          )}
+
           {/* Calendar card */}
           <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
             {/* Month nav */}
