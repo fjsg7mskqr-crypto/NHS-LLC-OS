@@ -63,7 +63,7 @@ async function resolveEntityArgs(
   }
 ) {
   const client_id = await resolveClientId(context.supabase, input.client)
-  const property_id = await resolvePropertyId(context.supabase, input.property)
+  const property_id = await resolvePropertyId(context.supabase, input.property, client_id)
   const job_id = await resolveJobId(context.supabase, input.job)
 
   return { client_id, property_id, job_id }

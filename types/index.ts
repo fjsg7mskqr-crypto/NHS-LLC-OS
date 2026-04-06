@@ -89,6 +89,7 @@ export interface Task {
   id: string
   job_id?: string
   client_id?: string
+  property_id?: string
   title: string
   priority: Priority
   due_date?: string
@@ -97,6 +98,7 @@ export interface Task {
   deleted_at?: string
   job?: Job
   client?: Client
+  property?: Property
 }
 
 export interface Equipment {

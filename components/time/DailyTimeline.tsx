@@ -95,6 +95,7 @@ export default function DailyTimeline({ date, onEdit, onDelete }: { date: string
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-medium" style={{ color }}>{CATEGORY_LABELS[entry.category as CategoryType]}</span>
                         {entry.client && <span className="text-xs text-slate-500">— {entry.client.name}</span>}
+                        {entry.property && <span className="text-xs text-slate-600">/ {entry.property.name}</span>}
                         {entry.job && <span className="text-xs text-slate-600">/ {entry.job.title}</span>}
                       </div>
                       {entry.notes && <p className="text-xs text-slate-400 mt-0.5 truncate">{entry.notes}</p>}

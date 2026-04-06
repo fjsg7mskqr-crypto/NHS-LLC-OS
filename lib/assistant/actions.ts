@@ -464,7 +464,9 @@ async function resolveEntityIds(
     resolved.client_id = await resolveClientId(supabase, resolved.client_id)
   }
   if (typeof resolved.property_id === 'string' && resolved.property_id) {
-    resolved.property_id = await resolvePropertyId(supabase, resolved.property_id)
+    // Scope property lookup to the resolved client when available
+    const clientScope = typeof resolved.client_id === 'string' ? resolved.client_id : null
+    resolved.property_id = await resolvePropertyId(supabase, resolved.property_id, clientScope)
   }
   if (typeof resolved.job_id === 'string' && resolved.job_id) {
     resolved.job_id = await resolveJobId(supabase, resolved.job_id)

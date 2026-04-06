@@ -3,13 +3,14 @@
 import { useState, useEffect, useCallback, useId } from 'react'
 import { X } from 'lucide-react'
 import ErrorBanner from '@/components/ui/ErrorBanner'
-import type { Client, Job, Priority } from '@/types'
+import type { Client, Job, Priority, Property } from '@/types'
 
 interface TaskForm {
   title: string
   priority: Priority
   due_date: string
   client_id: string
+  property_id: string
   job_id: string
 }
 
@@ -26,9 +27,11 @@ export default function CreateTaskModal({
     priority: 'medium',
     due_date: '',
     client_id: '',
+    property_id: '',
     job_id: '',
   })
   const [clients, setClients] = useState<Client[]>([])
+  const [properties, setProperties] = useState<Property[]>([])
   const [jobs, setJobs] = useState<Job[]>([])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -38,6 +41,7 @@ export default function CreateTaskModal({
 
   useEffect(() => {
     fetch('/api/clients').then(r => r.json()).then(d => setClients(d || [])).catch(() => {})
+    fetch('/api/properties').then(r => r.json()).then(d => setProperties(d || [])).catch(() => {})
     fetch('/api/jobs').then(r => r.json()).then(d => setJobs(d || [])).catch(() => {})
   }, [])
 
@@ -50,6 +54,7 @@ export default function CreateTaskModal({
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [handleKeyDown])
 
+  const clientProperties = properties.filter(p => p.client_id === form.client_id)
   const clientJobs = jobs.filter(j => j.client_id === form.client_id && j.status !== 'cancelled')
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -66,6 +71,7 @@ export default function CreateTaskModal({
           priority: form.priority,
           due_date: form.due_date || null,
           client_id: form.client_id || null,
+          property_id: form.property_id || null,
           job_id: form.job_id || null,
         }),
       })
@@ -113,22 +119,33 @@ export default function CreateTaskModal({
               <input id="task-due" type="date" value={form.due_date} onChange={e => set('due_date', e.target.value)} className={inputClass} />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label htmlFor="task-client" className="block text-xs text-slate-500 mb-1">Client</label>
-              <select id="task-client" value={form.client_id} onChange={e => { set('client_id', e.target.value); set('job_id', '') }} className={inputClass}>
-                <option value="">— None —</option>
-                {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
-            </div>
-            <div>
-              <label htmlFor="task-job" className="block text-xs text-slate-500 mb-1">Job</label>
-              <select id="task-job" value={form.job_id} onChange={e => set('job_id', e.target.value)} disabled={!form.client_id} className={`${inputClass} disabled:opacity-40`}>
-                <option value="">— None —</option>
-                {clientJobs.map(j => <option key={j.id} value={j.id}>{j.title}</option>)}
-              </select>
-            </div>
+          <div>
+            <label htmlFor="task-client" className="block text-xs text-slate-500 mb-1">Client</label>
+            <select id="task-client" value={form.client_id} onChange={e => { set('client_id', e.target.value); set('property_id', ''); set('job_id', '') }} className={inputClass}>
+              <option value="">— None —</option>
+              {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
           </div>
+          {form.client_id && (
+            <div className="grid grid-cols-2 gap-3">
+              {clientProperties.length > 0 && (
+                <div>
+                  <label htmlFor="task-property" className="block text-xs text-slate-500 mb-1">Property</label>
+                  <select id="task-property" value={form.property_id} onChange={e => set('property_id', e.target.value)} className={inputClass}>
+                    <option value="">— None —</option>
+                    {clientProperties.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  </select>
+                </div>
+              )}
+              <div>
+                <label htmlFor="task-job" className="block text-xs text-slate-500 mb-1">Job</label>
+                <select id="task-job" value={form.job_id} onChange={e => set('job_id', e.target.value)} className={inputClass}>
+                  <option value="">— None —</option>
+                  {clientJobs.map(j => <option key={j.id} value={j.id}>{j.title}</option>)}
+                </select>
+              </div>
+            </div>
+          )}
 
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose} className="flex-1 px-4 py-2 rounded-lg border border-slate-700 text-slate-400 hover:text-slate-200 hover:border-slate-600 text-sm font-medium transition-colors">Cancel</button>

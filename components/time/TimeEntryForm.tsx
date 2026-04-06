@@ -5,7 +5,7 @@ import { X } from 'lucide-react'
 import { CATEGORY_LABELS } from '@/lib/utils'
 import { format } from 'date-fns'
 import ErrorBanner from '@/components/ui/ErrorBanner'
-import type { CategoryType, Client, Job, TimeEntry } from '@/types'
+import type { CategoryType, Client, Job, Property, TimeEntry } from '@/types'
 
 const CATEGORIES: CategoryType[] = ['client_work', 'drive_time', 'prep', 'admin', 'equipment_maint']
 
@@ -15,6 +15,7 @@ interface TimeEntryFormState {
   endTime: string
   category: CategoryType
   clientId: string
+  propertyId: string
   jobId: string
   notes: string
   billable: boolean
@@ -43,6 +44,7 @@ export default function TimeEntryForm({
         endTime: endDate ? format(endDate, 'HH:mm') : '11:00',
         category: entry.category as CategoryType,
         clientId: entry.client_id || '',
+        propertyId: entry.property_id || '',
         jobId: entry.job_id || '',
         notes: entry.notes || '',
         billable: entry.billable,
@@ -54,12 +56,14 @@ export default function TimeEntryForm({
       endTime: '11:00',
       category: 'client_work',
       clientId: '',
+      propertyId: '',
       jobId: '',
       notes: '',
       billable: true,
     }
   })
   const [clients, setClients] = useState<Client[]>([])
+  const [properties, setProperties] = useState<Property[]>([])
   const [jobs, setJobs] = useState<Job[]>([])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -70,6 +74,7 @@ export default function TimeEntryForm({
 
   useEffect(() => {
     fetch('/api/clients').then(r => r.json()).then(d => setClients(d || [])).catch(() => {})
+    fetch('/api/properties').then(r => r.json()).then(d => setProperties(d || [])).catch(() => {})
     fetch('/api/jobs').then(r => r.json()).then(d => setJobs(d || [])).catch(() => {})
   }, [])
 
@@ -82,6 +87,7 @@ export default function TimeEntryForm({
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [handleKeyDown])
 
+  const clientProperties = properties.filter(p => p.client_id === form.clientId)
   const activeJobs = jobs.filter(job => job.client_id === form.clientId && job.status !== 'cancelled')
   const selectedClient = clients.find(client => client.id === form.clientId)
 
@@ -103,6 +109,7 @@ export default function TimeEntryForm({
             id: entry.id,
             job_id: form.jobId || null,
             client_id: form.clientId || null,
+            property_id: form.propertyId || null,
             category: form.category,
             start_time: startTime,
             end_time: endTime,
@@ -122,6 +129,7 @@ export default function TimeEntryForm({
           body: JSON.stringify({
             job_id: form.jobId || null,
             client_id: form.clientId || null,
+            property_id: form.propertyId || null,
             category: form.category,
             start_time: startTime,
             end_time: endTime,
@@ -178,11 +186,20 @@ export default function TimeEntryForm({
           </div>
           <div>
             <label htmlFor="te-client" className="block text-xs text-slate-500 mb-1">Client</label>
-            <select id="te-client" value={form.clientId} onChange={e => { set('clientId', e.target.value); set('jobId', '') }} className={inputClass}>
+            <select id="te-client" value={form.clientId} onChange={e => { set('clientId', e.target.value); set('propertyId', ''); set('jobId', '') }} className={inputClass}>
               <option value="">— No client —</option>
               {clients.map(client => <option key={client.id} value={client.id}>{client.name}</option>)}
             </select>
           </div>
+          {form.clientId && clientProperties.length > 0 && (
+            <div>
+              <label htmlFor="te-property" className="block text-xs text-slate-500 mb-1">Property</label>
+              <select id="te-property" value={form.propertyId} onChange={e => set('propertyId', e.target.value)} className={inputClass}>
+                <option value="">— No property —</option>
+                {clientProperties.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+            </div>
+          )}
           {form.clientId && (
             <div>
               <label htmlFor="te-job" className="block text-xs text-slate-500 mb-1">Job (optional)</label>

@@ -12,7 +12,8 @@ async function resolveSingleByIdOrName(
   table: 'clients' | 'properties' | 'jobs' | 'tasks',
   label: string,
   value: string,
-  select: string
+  select: string,
+  filters?: Record<string, string | null>
 ) {
   const normalized = normalizeValue(value)
   const byId = UUID_PATTERN.test(normalized)
@@ -28,6 +29,13 @@ async function resolveSingleByIdOrName(
 
   if (table === 'tasks') {
     query = query.eq('completed', false)
+  }
+
+  // Apply additional filters (e.g. client_id for scoping properties)
+  if (filters) {
+    for (const [key, val] of Object.entries(filters)) {
+      if (val) query = query.eq(key, val)
+    }
   }
 
   if (byId) {
@@ -70,14 +78,15 @@ export async function resolveClientId(supabase: SupabaseClient, value?: string |
   return client.id as string
 }
 
-export async function resolvePropertyId(supabase: SupabaseClient, value?: string | null) {
+export async function resolvePropertyId(supabase: SupabaseClient, value?: string | null, clientId?: string | null) {
   if (!value) return null
   const property = await resolveSingleByIdOrName(
     supabase,
     'properties',
     'property',
     value,
-    'id, name, client_id'
+    'id, name, client_id',
+    clientId ? { client_id: clientId } : undefined
   )
   return property.id as string
 }
