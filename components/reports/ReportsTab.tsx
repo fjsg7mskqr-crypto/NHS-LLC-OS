@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { formatCurrency, formatMinutes } from '@/lib/utils'
 import ErrorBanner from '@/components/ui/ErrorBanner'
-import type { Client, Job, Invoice, TimeEntry } from '@/types'
+import type { Client, Job, Invoice, TimeEntry, SquareInvoice } from '@/types'
 
 function BarChart({ items, colorClass }: { items: { label: string; value: number; display: string }[]; colorClass: string }) {
   const max = Math.max(...items.map(i => i.value), 1)
@@ -29,6 +29,7 @@ export default function ReportsTab() {
   const [clients, setClients] = useState<Client[]>([])
   const [jobs, setJobs] = useState<Job[]>([])
   const [invoices, setInvoices] = useState<Invoice[]>([])
+  const [squareInvoices, setSquareInvoices] = useState<SquareInvoice[]>([])
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -37,16 +38,18 @@ export default function ReportsTab() {
     setLoading(true)
     setError(null)
     Promise.all([
-      fetch('/api/clients').then(r => { if (!r.ok) throw new Error('Failed to load'); return r.json() }),
-      fetch('/api/jobs').then(r => { if (!r.ok) throw new Error('Failed to load'); return r.json() }),
-      fetch('/api/invoices').then(r => { if (!r.ok) throw new Error('Failed to load'); return r.json() }),
-      fetch('/api/time-entries').then(r => { if (!r.ok) throw new Error('Failed to load'); return r.json() }),
+      fetch('/api/clients').then(r => r.ok ? r.json() : []),
+      fetch('/api/jobs').then(r => r.ok ? r.json() : []),
+      fetch('/api/invoices').then(r => r.ok ? r.json() : []),
+      fetch('/api/square-invoices').then(r => r.ok ? r.json() : []),
+      fetch('/api/time-entries').then(r => r.ok ? r.json() : []),
     ])
-      .then(([cli, jbs, invs, te]) => {
-        setClients(cli || [])
-        setJobs(jbs || [])
-        setInvoices(invs || [])
-        setTimeEntries(te || [])
+      .then(([cli, jbs, invs, sqInvs, te]) => {
+        setClients(Array.isArray(cli) ? cli : [])
+        setJobs(Array.isArray(jbs) ? jbs : [])
+        setInvoices(Array.isArray(invs) ? invs : [])
+        setSquareInvoices(Array.isArray(sqInvs) ? sqInvs : [])
+        setTimeEntries(Array.isArray(te) ? te : [])
       })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false))
@@ -58,17 +61,35 @@ export default function ReportsTab() {
   const yearStart = new Date(now.getFullYear(), 0, 1).toISOString().slice(0, 10)
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10)
 
-  // Revenue metrics
-  const totalRevenue = invoices.filter(i => i.status === 'paid').reduce((s, i) => s + i.total, 0)
-  const ytdRevenue = invoices.filter(i => i.status === 'paid' && i.updated_at >= yearStart).reduce((s, i) => s + i.total, 0)
-  const monthRevenue = invoices.filter(i => i.status === 'paid' && i.updated_at >= monthStart).reduce((s, i) => s + i.total, 0)
-  const outstanding = invoices.filter(i => i.status === 'sent' || i.status === 'overdue').reduce((s, i) => s + i.total, 0)
+  // Helper for Square paid date
+  const sqDate = (i: SquareInvoice) => i.paid_date || i.due_date || i.issued_date || ''
 
-  // Revenue by client
+  // Revenue metrics — combine manual + Square
+  const manualPaidTotal = invoices.filter(i => i.status === 'paid').reduce((s, i) => s + i.total, 0)
+  const squarePaidTotal = squareInvoices.filter(i => i.status === 'paid').reduce((s, i) => s + Number(i.amount_paid), 0)
+  const totalRevenue = manualPaidTotal + squarePaidTotal
+
+  const ytdRevenue =
+    invoices.filter(i => i.status === 'paid' && i.updated_at >= yearStart).reduce((s, i) => s + i.total, 0) +
+    squareInvoices.filter(i => i.status === 'paid' && sqDate(i) >= yearStart).reduce((s, i) => s + Number(i.amount_paid), 0)
+
+  const monthRevenue =
+    invoices.filter(i => i.status === 'paid' && i.updated_at >= monthStart).reduce((s, i) => s + i.total, 0) +
+    squareInvoices.filter(i => i.status === 'paid' && sqDate(i) >= monthStart).reduce((s, i) => s + Number(i.amount_paid), 0)
+
+  const outstanding =
+    invoices.filter(i => i.status === 'sent' || i.status === 'overdue').reduce((s, i) => s + i.total, 0) +
+    squareInvoices.filter(i => i.status === 'unpaid' || i.status === 'overdue' || i.status === 'partially_paid').reduce((s, i) => s + Number(i.amount_due), 0)
+
+  // Revenue by client — combine both sources
   const revenueByClient: Record<string, number> = {}
   for (const inv of invoices.filter(i => i.status === 'paid')) {
     const name = inv.client?.name || 'Unknown'
     revenueByClient[name] = (revenueByClient[name] || 0) + inv.total
+  }
+  for (const inv of squareInvoices.filter(i => i.status === 'paid')) {
+    const name = inv.client?.name || 'Unmatched'
+    revenueByClient[name] = (revenueByClient[name] || 0) + Number(inv.amount_paid)
   }
   const clientRevenueItems = Object.entries(revenueByClient)
     .sort((a, b) => b[1] - a[1])
@@ -98,23 +119,28 @@ export default function ReportsTab() {
     .sort((a, b) => b[1] - a[1])
     .map(([label, value]) => ({ label: label.replace('_', ' '), value, display: formatMinutes(value) }))
 
-  // Monthly revenue trend (last 6 months)
+  // Monthly revenue trend (last 6 months) — combine both sources
   const monthlyRevenue: { label: string; value: number; display: string }[] = []
   for (let i = 5; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
     const ms = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
     const label = d.toLocaleDateString('en-US', { month: 'short' })
-    const value = invoices
+    const manualVal = invoices
       .filter(inv => inv.status === 'paid' && inv.updated_at.startsWith(ms))
       .reduce((s, inv) => s + inv.total, 0)
-    monthlyRevenue.push({ label, value, display: formatCurrency(value) })
+    const squareVal = squareInvoices
+      .filter(inv => inv.status === 'paid' && sqDate(inv).startsWith(ms))
+      .reduce((s, inv) => s + Number(inv.amount_paid), 0)
+    monthlyRevenue.push({ label, value: manualVal + squareVal, display: formatCurrency(manualVal + squareVal) })
   }
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-xl font-bold text-white">Reports</h1>
-        <p className="text-sm text-slate-500">{clients.length} clients · {jobs.length} jobs · {invoices.length} invoices</p>
+        <p className="text-sm text-slate-500">
+          {clients.length} clients · {jobs.length} jobs · {invoices.length + squareInvoices.length} invoices
+        </p>
       </div>
 
       {error && <ErrorBanner message={error} onDismiss={() => setError(null)} />}
@@ -122,7 +148,7 @@ export default function ReportsTab() {
       {/* Top-level metrics */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 stagger-grid">
         <div className="metric-card metric-card--emerald rounded-xl border border-slate-800 bg-slate-900/50 p-4">
-          <p className="text-xs text-slate-500 mb-1">Total Revenue (Paid)</p>
+          <p className="text-xs text-slate-500 mb-1">Total Revenue (All Time)</p>
           <p className="text-lg font-semibold text-emerald-400 glow-emerald">{formatCurrency(totalRevenue)}</p>
         </div>
         <div className="metric-card metric-card--blue rounded-xl border border-slate-800 bg-slate-900/50 p-4">
@@ -183,16 +209,22 @@ export default function ReportsTab() {
               </div>
             </div>
           </div>
-          <div className="w-full h-3 bg-slate-800 rounded-full overflow-hidden flex">
-            {completed > 0 && <div className="h-full bg-emerald-500" style={{ width: `${(completed / totalJobs) * 100}%` }} />}
-            {active > 0 && <div className="h-full bg-blue-500" style={{ width: `${(active / totalJobs) * 100}%` }} />}
-            {cancelled > 0 && <div className="h-full bg-slate-600" style={{ width: `${(cancelled / totalJobs) * 100}%` }} />}
-          </div>
-          <div className="flex gap-4 mt-2">
-            <span className="flex items-center gap-1 text-[10px] text-slate-400"><span className="w-2 h-2 rounded-full bg-emerald-500" />Complete</span>
-            <span className="flex items-center gap-1 text-[10px] text-slate-400"><span className="w-2 h-2 rounded-full bg-blue-500" />Active</span>
-            <span className="flex items-center gap-1 text-[10px] text-slate-400"><span className="w-2 h-2 rounded-full bg-slate-600" />Cancelled</span>
-          </div>
+          {totalJobs > 0 ? (
+            <>
+              <div className="w-full h-3 bg-slate-800 rounded-full overflow-hidden flex">
+                {completed > 0 && <div className="h-full bg-emerald-500" style={{ width: `${(completed / totalJobs) * 100}%` }} />}
+                {active > 0 && <div className="h-full bg-blue-500" style={{ width: `${(active / totalJobs) * 100}%` }} />}
+                {cancelled > 0 && <div className="h-full bg-slate-600" style={{ width: `${(cancelled / totalJobs) * 100}%` }} />}
+              </div>
+              <div className="flex gap-4 mt-2">
+                <span className="flex items-center gap-1 text-[10px] text-slate-400"><span className="w-2 h-2 rounded-full bg-emerald-500" />Complete</span>
+                <span className="flex items-center gap-1 text-[10px] text-slate-400"><span className="w-2 h-2 rounded-full bg-blue-500" />Active</span>
+                <span className="flex items-center gap-1 text-[10px] text-slate-400"><span className="w-2 h-2 rounded-full bg-slate-600" />Cancelled</span>
+              </div>
+            </>
+          ) : (
+            <p className="text-xs text-slate-500">No jobs yet</p>
+          )}
         </div>
 
         {/* Time Utilization */}
