@@ -35,24 +35,28 @@ export default function ReportsTab() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    setLoading(true)
-    setError(null)
-    Promise.all([
-      fetch('/api/clients').then(r => r.ok ? r.json() : []),
-      fetch('/api/jobs').then(r => r.ok ? r.json() : []),
-      fetch('/api/invoices').then(r => r.ok ? r.json() : []),
-      fetch('/api/square-invoices').then(r => r.ok ? r.json() : []),
-      fetch('/api/time-entries').then(r => r.ok ? r.json() : []),
-    ])
-      .then(([cli, jbs, invs, sqInvs, te]) => {
+    (async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        const [cli, jbs, invs, sqInvs, te] = await Promise.all([
+          fetch('/api/clients').then(r => r.ok ? r.json() : []),
+          fetch('/api/jobs').then(r => r.ok ? r.json() : []),
+          fetch('/api/invoices').then(r => r.ok ? r.json() : []),
+          fetch('/api/square-invoices').then(r => r.ok ? r.json() : []),
+          fetch('/api/time-entries').then(r => r.ok ? r.json() : []),
+        ])
         setClients(Array.isArray(cli) ? cli : [])
         setJobs(Array.isArray(jbs) ? jbs : [])
         setInvoices(Array.isArray(invs) ? invs : [])
         setSquareInvoices(Array.isArray(sqInvs) ? sqInvs : [])
         setTimeEntries(Array.isArray(te) ? te : [])
-      })
-      .catch(e => setError(e.message))
-      .finally(() => setLoading(false))
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Failed to load')
+      } finally {
+        setLoading(false)
+      }
+    })()
   }, [])
 
   if (loading) return <div className="py-12 text-center text-slate-500 text-sm">Loading reports...</div>

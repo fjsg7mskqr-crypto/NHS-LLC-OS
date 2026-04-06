@@ -19,14 +19,21 @@ export default function TasksTab() {
   const [updating, setUpdating] = useState(false)
 
   useEffect(() => {
-    setLoading(true)
-    setError(null)
-    const url = showCompleted ? '/api/tasks?show_completed=true' : '/api/tasks'
-    fetch(url)
-      .then(r => { if (!r.ok) throw new Error('Failed to load tasks'); return r.json() })
-      .then((data: Task[]) => setTasks(data || []))
-      .catch(e => setError(e.message))
-      .finally(() => setLoading(false))
+    (async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        const url = showCompleted ? '/api/tasks?show_completed=true' : '/api/tasks'
+        const r = await fetch(url)
+        if (!r.ok) throw new Error('Failed to load tasks')
+        const data: Task[] = await r.json()
+        setTasks(data || [])
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Failed to load tasks')
+      } finally {
+        setLoading(false)
+      }
+    })()
   }, [listKey, showCompleted])
 
   const toggleComplete = async (task: Task) => {

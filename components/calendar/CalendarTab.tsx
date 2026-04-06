@@ -65,15 +65,22 @@ export default function CalendarTab() {
   const [listKey, setListKey] = useState(0)
 
   useEffect(() => {
-    setLoading(true)
-    setError(null)
-    Promise.all([
-      fetch('/api/calendar-blocks').then(r => { if (!r.ok) throw new Error('Failed to load calendar'); return r.json() }),
-      fetch('/api/jobs').then(r => { if (!r.ok) throw new Error('Failed to load jobs'); return r.json() }),
-    ])
-      .then(([b, j]) => { setBlocks(b || []); setJobs(j || []) })
-      .catch(e => setError(e.message))
-      .finally(() => setLoading(false))
+    (async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        const [b, j] = await Promise.all([
+          fetch('/api/calendar-blocks').then(r => { if (!r.ok) throw new Error('Failed to load calendar'); return r.json() }),
+          fetch('/api/jobs').then(r => { if (!r.ok) throw new Error('Failed to load jobs'); return r.json() }),
+        ])
+        setBlocks(b || [])
+        setJobs(j || [])
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Failed to load')
+      } finally {
+        setLoading(false)
+      }
+    })()
   }, [listKey])
 
   // Navigation

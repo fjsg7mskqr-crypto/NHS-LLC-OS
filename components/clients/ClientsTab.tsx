@@ -20,20 +20,24 @@ export default function ClientsTab() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    setLoading(true)
-    setError(null)
-    Promise.all([
-      fetch('/api/clients').then(r => { if (!r.ok) throw new Error('Failed to load clients'); return r.json() }),
-      fetch('/api/properties').then(r => { if (!r.ok) throw new Error('Failed to load properties'); return r.json() }),
-      fetch('/api/jobs').then(r => { if (!r.ok) throw new Error('Failed to load jobs'); return r.json() }),
-    ])
-      .then(([cli, props, jbs]) => {
+    (async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        const [cli, props, jbs] = await Promise.all([
+          fetch('/api/clients').then(r => { if (!r.ok) throw new Error('Failed to load clients'); return r.json() }),
+          fetch('/api/properties').then(r => { if (!r.ok) throw new Error('Failed to load properties'); return r.json() }),
+          fetch('/api/jobs').then(r => { if (!r.ok) throw new Error('Failed to load jobs'); return r.json() }),
+        ])
         setClients(cli || [])
         setProperties(props || [])
         setJobs(jbs || [])
-      })
-      .catch(e => setError(e.message))
-      .finally(() => setLoading(false))
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Failed to load')
+      } finally {
+        setLoading(false)
+      }
+    })()
   }, [listKey])
 
   const totalClients = clients.length

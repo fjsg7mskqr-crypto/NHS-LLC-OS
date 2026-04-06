@@ -15,13 +15,20 @@ export default function EquipmentTab() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    setLoading(true)
-    setError(null)
-    fetch('/api/equipment')
-      .then(r => { if (!r.ok) throw new Error('Failed to load equipment'); return r.json() })
-      .then((data: Equipment[]) => setEquipment(data || []))
-      .catch(e => setError(e.message))
-      .finally(() => setLoading(false))
+    (async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        const r = await fetch('/api/equipment')
+        if (!r.ok) throw new Error('Failed to load equipment')
+        const data: Equipment[] = await r.json()
+        setEquipment(data || [])
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Failed to load equipment')
+      } finally {
+        setLoading(false)
+      }
+    })()
   }, [listKey])
 
   const needsRepair = equipment.filter(e => e.condition === 'needs_repair').length

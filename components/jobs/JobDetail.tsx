@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { ArrowLeft, MapPin, Clock, DollarSign, CheckCircle, ExternalLink, Repeat, CalendarDays, Pencil, Trash2, X } from 'lucide-react'
 import { formatCurrency, formatHours, formatMinutes, statusColor, CATEGORY_COLORS, CATEGORY_LABELS } from '@/lib/utils'
 import ErrorBanner from '@/components/ui/ErrorBanner'
-import type { Job, CategoryType, Invoice, TimeEntry, Client, Property, JobStatus } from '@/types'
+import type { Job, CategoryType, Invoice, TimeEntry, Client, Property } from '@/types'
 
 export default function JobDetail({ job, onBack, onUpdated }: { job: Job; onBack: () => void; onUpdated?: () => void }) {
   const [entries, setEntries] = useState<TimeEntry[]>([])

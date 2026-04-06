@@ -21,7 +21,7 @@ export default function TasksDue({ limit = 6 }: { limit?: number }) {
       .then(r => r.json())
       .then(data => setUpcoming(data || []))
       .catch(() => {})
-  }, [])
+  }, [limit])
 
   const today = new Date()
 

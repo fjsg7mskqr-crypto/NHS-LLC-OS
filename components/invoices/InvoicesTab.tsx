@@ -21,25 +21,29 @@ export default function InvoicesTab() {
   const [view, setView] = useState<'manual' | 'square'>('square')
 
   useEffect(() => {
-    setLoading(true)
-    setError(null)
-    Promise.all([
-      fetch('/api/invoices').then(r => r.ok ? r.json() : []),
-      fetch('/api/square-invoices').then(async r => {
-        if (!r.ok) {
-          const text = await r.text().catch(() => '')
-          console.error('square-invoices fetch failed:', r.status, text)
-          return []
-        }
-        return r.json()
-      }),
-    ])
-      .then(([manual, square]) => {
+    (async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        const [manual, square] = await Promise.all([
+          fetch('/api/invoices').then(r => r.ok ? r.json() : []),
+          fetch('/api/square-invoices').then(async r => {
+            if (!r.ok) {
+              const text = await r.text().catch(() => '')
+              console.error('square-invoices fetch failed:', r.status, text)
+              return []
+            }
+            return r.json()
+          }),
+        ])
         setInvoices(Array.isArray(manual) ? manual : [])
         setSquareInvoices(Array.isArray(square) ? square : [])
-      })
-      .catch(e => setError(e.message))
-      .finally(() => setLoading(false))
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Failed to load')
+      } finally {
+        setLoading(false)
+      }
+    })()
   }, [listKey])
 
   const now = new Date()

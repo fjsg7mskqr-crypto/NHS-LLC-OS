@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Search, ArrowUpRight, Users, AlertTriangle } from 'lucide-react'
+import { Search, ArrowUpRight, Users } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import type { Client } from '@/types'
 

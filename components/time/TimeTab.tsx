@@ -1,11 +1,10 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { Plus, ChevronLeft, ChevronRight, Calendar } from 'lucide-react'
+import { Plus, ChevronLeft, ChevronRight } from 'lucide-react'
 import {
   startOfWeek, endOfWeek, addDays, addWeeks, addMonths,
-  format, startOfMonth, endOfMonth, isSameDay, isSameMonth,
-  isWithinInterval, parseISO,
+  format, startOfMonth, endOfMonth, parseISO,
 } from 'date-fns'
 import DailyTimeline from './DailyTimeline'
 import WeeklyChart from './WeeklyChart'
@@ -232,10 +231,6 @@ export default function TimeTab() {
     }
     return format(anchor, 'MMMM yyyy')
   }
-
-  // Highlight range for non-custom views
-  const rangeStart = viewMode === 'custom' ? customStart : null
-  const rangeEnd = viewMode === 'custom' ? customEnd : null
 
   // For week view, compute the highlighted week range
   const weekHighlight = viewMode === 'week'
