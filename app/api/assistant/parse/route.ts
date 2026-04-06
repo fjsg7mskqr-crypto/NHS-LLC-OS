@@ -35,6 +35,7 @@ export async function POST(request: NextRequest) {
     const chosen = await chooseAssistantActionWithOpenAI({
       message: body.message,
       actor,
+      timezone: context.timezone,
     })
 
     if (chosen.type === 'message') {

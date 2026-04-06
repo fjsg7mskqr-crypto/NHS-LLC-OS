@@ -51,12 +51,14 @@ const ACTION_TOOLS = [
   {
     type: 'function',
     name: 'log_time',
-    description: 'Log time after the fact.',
+    description: 'Log time after the fact. When the user gives specific start/end times (e.g. "9:30 AM to 10:45 AM"), use start_time and end_time as ISO 8601 strings in the user\'s timezone. When the user gives only a duration (e.g. "75 minutes"), use minutes instead.',
     strict: false,
     parameters: {
       type: 'object',
       properties: {
-        minutes: { type: ['number', 'null'] },
+        minutes: { type: ['number', 'null'], description: 'Duration in minutes. Use this OR start_time+end_time, not both.' },
+        start_time: { type: ['string', 'null'], description: 'ISO 8601 start time. Use with end_time when user gives specific times.' },
+        end_time: { type: ['string', 'null'], description: 'ISO 8601 end time. Use with start_time when user gives specific times.' },
         category: {
           type: 'string',
           enum: ['client_work', 'drive_time', 'errand', 'prep', 'admin', 'equipment_maint'],
@@ -67,7 +69,7 @@ const ACTION_TOOLS = [
         notes: { type: ['string', 'null'] },
         billable: { type: ['boolean', 'null'] },
       },
-      required: ['minutes', 'category'],
+      required: ['category'],
       additionalProperties: false,
     },
   },
@@ -178,7 +180,14 @@ function getOpenAIModel() {
 export async function chooseAssistantActionWithOpenAI(input: {
   message: string
   actor: AssistantActor
+  timezone?: string
 }): Promise<ToolCallResult> {
+  const tz = input.timezone || 'America/Detroit'
+  const nowLocal = new Date().toLocaleString('en-US', { timeZone: tz })
+  const todayISO = new Date(
+    new Date().toLocaleString('en-US', { timeZone: tz })
+  ).toISOString().slice(0, 10)
+
   const response = await fetch('https://api.openai.com/v1/responses', {
     method: 'POST',
     headers: {
@@ -193,6 +202,8 @@ export async function chooseAssistantActionWithOpenAI(input: {
         'Choose exactly one function when the user intent is clear and executable.',
         'Use sensible defaults: category defaults to client_work, billable defaults to true for client_work.',
         'If the user says "log time" or "time card entry", you only need to ask how long (minutes or hours) — everything else is optional.',
+        `The user is in the ${tz} timezone. The current local time is ${nowLocal} and today's date is ${todayISO}.`,
+        'When the user provides specific start and end times (like "9:30 AM to 10:45 AM"), use start_time and end_time as ISO 8601 strings for today in their timezone. Do NOT convert to minutes — pass the exact times.',
         'When you need clarification, ask ONE simple follow-up question in plain English. Never list raw field names or IDs.',
         'For example, ask "How long did you work?" not "Please provide: minutes, category, client_id...".',
         'Never invent clients, properties, jobs, tasks, or dates.',
