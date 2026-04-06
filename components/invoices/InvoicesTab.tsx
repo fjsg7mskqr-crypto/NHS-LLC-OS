@@ -63,15 +63,16 @@ export default function InvoicesTab() {
     .reduce((s, i) => s + i.total, 0)
   const overdue = sqOverdue + manualOverdue
 
+  const sqPaidDate = (i: SquareInvoice) => i.paid_date || i.due_date || i.issued_date || ''
   const sqPaidMonth = squareInvoices
-    .filter(i => i.status === 'paid' && i.paid_date && i.paid_date >= monthStart)
+    .filter(i => i.status === 'paid' && sqPaidDate(i) >= monthStart)
     .reduce((s, i) => s + Number(i.amount_paid), 0)
   const paidThisMonth = sqPaidMonth + invoices
     .filter(i => i.status === 'paid' && i.updated_at >= monthStart)
     .reduce((s, i) => s + i.total, 0)
 
   const sqPaidYTD = squareInvoices
-    .filter(i => i.status === 'paid' && i.paid_date && i.paid_date >= yearStart)
+    .filter(i => i.status === 'paid' && sqPaidDate(i) >= yearStart)
     .reduce((s, i) => s + Number(i.amount_paid), 0)
   const paidYTD = sqPaidYTD + invoices
     .filter(i => i.status === 'paid' && i.updated_at >= yearStart)

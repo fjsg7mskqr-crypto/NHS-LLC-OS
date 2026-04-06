@@ -86,7 +86,7 @@ export async function syncSquareInvoices(supabase: SupabaseClient) {
               amount_due: amountDue,
               issued_date: inv.createdAt ? inv.createdAt.slice(0, 10) : null,
               due_date: inv.paymentRequests?.[0]?.dueDate ?? null,
-              paid_date: status === 'PAID' ? new Date().toISOString().slice(0, 10) : null,
+              paid_date: status === 'paid' ? (inv.paymentRequests?.[0]?.dueDate ?? new Date().toISOString().slice(0, 10)) : null,
               last_synced_at: new Date().toISOString(),
             },
             { onConflict: 'square_id' }
