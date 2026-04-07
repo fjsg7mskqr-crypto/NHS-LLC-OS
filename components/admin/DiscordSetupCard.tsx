@@ -1,12 +1,25 @@
 'use client'
 
 import { useState } from 'react'
+import { ChevronDown, ChevronRight } from 'lucide-react'
+
+const SLASH_COMMANDS = [
+  { cmd: '/clockin', params: 'category, client, property, job, notes', desc: 'Start a timer now' },
+  { cmd: '/clockout', params: 'notes', desc: 'Stop timer and write entry' },
+  { cmd: '/log', params: 'minutes, category, client, property, job, notes', desc: 'Log time after the fact' },
+  { cmd: '/task add', params: 'title, priority, client, property', desc: 'Create a task' },
+  { cmd: '/task done', params: 'title', desc: 'Mark a task complete' },
+  { cmd: '/block', params: 'property, start, end, notes', desc: 'Block calendar dates' },
+  { cmd: '/status', params: '', desc: 'Clock-in status + today\'s summary' },
+  { cmd: '/sync', params: '', desc: 'Trigger Square invoice sync' },
+]
 
 export default function DiscordSetupCard() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [count, setCount] = useState<number | null>(null)
+  const [showRef, setShowRef] = useState(false)
 
   async function handleRegister() {
     setLoading(true)
@@ -68,6 +81,42 @@ export default function DiscordSetupCard() {
           {error}
         </div>
       ) : null}
+
+      <div className="mt-4 border-t border-slate-800 pt-4">
+        <button
+          type="button"
+          onClick={() => setShowRef(v => !v)}
+          className="flex items-center gap-1.5 text-sm font-medium text-slate-400 hover:text-slate-200 transition-colors"
+        >
+          {showRef ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+          Slash Command Reference
+        </button>
+        {showRef && (
+          <div className="mt-3 overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-xs text-slate-500 uppercase tracking-wide">
+                  <th className="pb-2 pr-4 font-medium">Command</th>
+                  <th className="pb-2 pr-4 font-medium">Parameters</th>
+                  <th className="pb-2 font-medium">Description</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/50">
+                {SLASH_COMMANDS.map(row => (
+                  <tr key={row.cmd}>
+                    <td className="py-2 pr-4 font-mono text-emerald-400 whitespace-nowrap">{row.cmd}</td>
+                    <td className="py-2 pr-4 text-slate-400">{row.params || <span className="text-slate-600">none</span>}</td>
+                    <td className="py-2 text-slate-300">{row.desc}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <p className="mt-3 text-xs text-slate-600">
+              Plain text also works — just type naturally in #nhs-os and the bot will parse your message with AI.
+            </p>
+          </div>
+        )}
+      </div>
     </section>
   )
 }
