@@ -23,17 +23,18 @@ Square stays in place for what it does well: invoicing, payment processing, and 
 | Service | Role | Cost |
 |---|---|---|
 | Vercel | Next.js dashboard + API routes | Free tier |
-| Supabase | PostgreSQL database + Edge Functions (Discord bot) | Free tier |
-| Anthropic Claude API | AI parsing for Discord plain-text messages | ~$3–5/mo |
+| Supabase | PostgreSQL database | Free tier |
+| Railway | Discord gateway bot (persistent process) | Free tier |
+| OpenAI API | AI parsing for Discord plain-text messages | ~$3–5/mo |
 | Square API | Read-only invoice + payment sync | Free |
 | Discord | Field communication interface | Free |
 
 ### Architecture
 ```
-Discord (you) → Slash command or plain text → Supabase Edge Function (bot)
-Supabase Edge Function → Claude API → structured action JSON
-Supabase Edge Function → writes to → Supabase PostgreSQL
-app.nhs-llc.com → reads from → Supabase PostgreSQL
+Discord (you) → plain text → Railway bot (discord.js gateway)
+Railway bot → POST /api/assistant/parse → OpenAI → structured action JSON
+Railway bot → POST /api/assistant/execute → Supabase PostgreSQL
+app.nhs-llc.com → reads/writes → Supabase PostgreSQL
 Square sync (Vercel cron, 30 min) → polls Square → Supabase PostgreSQL
 ```
 
@@ -158,8 +159,7 @@ Client
 |---|---|---|
 | `client_work` | Yes | Direct service at a client property |
 | `drive_time` | Per client setting | Travel to/from a job site |
-| `errand` | No | Supply runs, hardware store |
-| `prep` | No | Loading truck, staging, property walk-through |
+| `prep` | No | Loading truck, staging, supply runs, property walk-through |
 | `admin` | No | Invoicing, scheduling, email, bookkeeping |
 | `equipment_maint` | No | Tool and equipment servicing |
 
@@ -246,7 +246,7 @@ You talk normally in `#nhs-os`; Claude interprets the message and writes to the 
 
 | You say | Claude does |
 |---|---|
-| "Just got back from Home Depot, 40 min supply run" | `log_time: 40min, errand, non-billable` |
+| "Just got back from Home Depot, 40 min supply run" | `log_time: 40min, prep, non-billable` |
 | "Done at the Lodge, took about 2.5 hours" | `clock_out + log: 2.5hr, client_work` |
 | "Den is booked April 24–26, Henderson family" | `block_calendar: Den, Apr 24–26, notes: Henderson family` |
 | "Add order more stain to my list, high priority" | `create_task: high priority, no client` |
@@ -306,9 +306,11 @@ client, property, job, category, billable, hourly_rate, billable_amount, notes
 |---|---|
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase public anon key |
-| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service key (for API routes + Edge Functions) |
-| `ANTHROPIC_API_KEY` | Claude API key |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service key (for API routes) |
+| `OPENAI_API_KEY` | OpenAI API key (AI parsing for bot messages) |
+| `ASSISTANT_SERVICE_TOKEN` | Bearer token for bot → API auth |
 | `DISCORD_BOT_TOKEN` | Discord bot token |
+| `DISCORD_APP_ID` | Discord application ID (for slash command registration) |
 | `DISCORD_CHANNEL_ID` | ID of the `#nhs-os` channel |
 | `DISCORD_USER_ID` | Your Discord user ID (bot only responds to you) |
 | `SQUARE_ACCESS_TOKEN` | Square production API key (read-only) |

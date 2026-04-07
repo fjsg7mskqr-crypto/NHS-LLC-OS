@@ -1,4 +1,5 @@
-import { Client, Events, GatewayIntentBits } from 'discord.js'
+import { Client, Events, GatewayIntentBits, InteractionType } from 'discord.js'
+import { interactionToAction } from './commands.mjs'
 import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
@@ -122,6 +123,31 @@ client.on(Events.MessageCreate, async message => {
     } else {
       await message.reply(msg)
     }
+  }
+})
+
+client.on(Events.InteractionCreate, async interaction => {
+  if (interaction.type !== InteractionType.ApplicationCommand) return
+  if (interaction.user.id !== process.env.DISCORD_USER_ID) {
+    await interaction.reply({ content: 'Not authorized.', ephemeral: true })
+    return
+  }
+
+  const action = interactionToAction(interaction)
+  if (!action) {
+    await interaction.reply({ content: 'Unknown command.', ephemeral: true })
+    return
+  }
+
+  await interaction.deferReply()
+
+  try {
+    const result = await executeAssistantAction(action)
+    await interaction.editReply(result.reply || 'Done.')
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : 'Slash command failed'
+    console.error('Slash command error:', msg)
+    await interaction.editReply(msg)
   }
 })
 

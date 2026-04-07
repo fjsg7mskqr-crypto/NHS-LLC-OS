@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Play, Square, ChevronDown } from 'lucide-react'
 import { CATEGORY_LABELS } from '@/lib/utils'
-import type { CategoryType, ClockSession, Client, Job } from '@/types'
+import type { CategoryType, ClockSession, Client, Job, Property } from '@/types'
 
 const CATEGORIES: CategoryType[] = ['client_work', 'drive_time', 'prep', 'admin', 'equipment_maint']
 
@@ -26,14 +26,19 @@ export default function ClockWidget() {
   const [elapsed, setElapsed] = useState('00:00:00')
   const [category, setCategory] = useState<CategoryType>(() => getStoredClockSession()?.category || 'client_work')
   const [clientId, setClientId] = useState(() => getStoredClockSession()?.clientId || '')
+  const [propertyId, setPropertyId] = useState(() => getStoredClockSession()?.propertyId || '')
   const [jobId, setJobId] = useState(() => getStoredClockSession()?.jobId || '')
   const [clients, setClients] = useState<Client[]>([])
+  const [properties, setProperties] = useState<Property[]>([])
   const [jobs, setJobs] = useState<Job[]>([])
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     fetch('/api/clients').then(r => r.json()).then(data => {
       setClients(data || [])
+    }).catch(() => {})
+    fetch('/api/properties').then(r => r.json()).then(data => {
+      setProperties(data || [])
     }).catch(() => {})
     fetch('/api/jobs?status=in_progress').then(r => r.json()).then(data => {
       setJobs(data || [])
@@ -52,11 +57,12 @@ export default function ClockWidget() {
     return () => clearInterval(timer)
   }, [clockedIn, session])
 
+  const clientProperties = properties.filter(p => p.client_id === clientId)
   const activeJobs = jobs.filter(j => j.client_id === clientId)
 
   const handleClockIn = () => {
     const now = new Date().toISOString()
-    const newSession: ClockSession = { startTime: now, category, clientId, jobId }
+    const newSession: ClockSession = { startTime: now, category, clientId, propertyId, jobId }
     localStorage.setItem('nhs_clock_session', JSON.stringify(newSession))
     setSession(newSession)
     setClockedIn(true)
@@ -78,6 +84,7 @@ export default function ClockWidget() {
         body: JSON.stringify({
           job_id: session.jobId || null,
           client_id: session.clientId || null,
+          property_id: session.propertyId || null,
           category: session.category,
           start_time: session.startTime,
           end_time: endTime,
@@ -97,6 +104,7 @@ export default function ClockWidget() {
   }
 
   const clockedInClient = clockedIn ? clients.find(c => c.id === session?.clientId) : null
+  const clockedInProperty = clockedIn ? properties.find(p => p.id === session?.propertyId) : null
   const clockedInJob = clockedIn ? jobs.find(j => j.id === session?.jobId) : null
 
   if (clockedIn) {
@@ -108,6 +116,7 @@ export default function ClockWidget() {
             <p className="text-xs text-emerald-400/80 mb-0.5">Clocked in — {CATEGORY_LABELS[session?.category || 'client_work']}</p>
             <p className="font-semibold text-white">
               {clockedInClient?.name || 'No client'}
+              {clockedInProperty && <span className="text-slate-400 font-normal"> / {clockedInProperty.name}</span>}
               {clockedInJob && <span className="text-slate-400 font-normal"> — {clockedInJob.title}</span>}
             </p>
             {session?.startTime && (
@@ -148,13 +157,25 @@ export default function ClockWidget() {
         <div className="flex flex-col gap-1">
           <label className="text-xs text-slate-500">Client</label>
           <div className="relative">
-            <select value={clientId} onChange={e => { setClientId(e.target.value); setJobId('') }} className="appearance-none pl-3 pr-8 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-200 focus:outline-none focus:border-emerald-500 cursor-pointer">
+            <select value={clientId} onChange={e => { setClientId(e.target.value); setPropertyId(''); setJobId('') }} className="appearance-none pl-3 pr-8 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-200 focus:outline-none focus:border-emerald-500 cursor-pointer">
               <option value="">— No client —</option>
               {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
             <ChevronDown className="absolute right-2 top-2.5 w-4 h-4 text-slate-400 pointer-events-none" />
           </div>
         </div>
+        {clientId && clientProperties.length > 0 && (
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-slate-500">Property</label>
+            <div className="relative">
+              <select value={propertyId} onChange={e => setPropertyId(e.target.value)} className="appearance-none pl-3 pr-8 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-200 focus:outline-none focus:border-emerald-500 cursor-pointer">
+                <option value="">— No property —</option>
+                {clientProperties.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+              <ChevronDown className="absolute right-2 top-2.5 w-4 h-4 text-slate-400 pointer-events-none" />
+            </div>
+          </div>
+        )}
         <div className="flex flex-col gap-1">
           <label className="text-xs text-slate-500">Job (optional)</label>
           <div className="relative">

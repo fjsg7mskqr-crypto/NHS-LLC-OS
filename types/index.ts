@@ -154,5 +154,6 @@ export interface ClockSession {
   startTime: string
   jobId: string
   clientId: string
+  propertyId: string
   category: CategoryType
 }

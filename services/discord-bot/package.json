@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "dev": "node src/index.mjs",
-    "start": "node src/index.mjs"
+    "start": "node src/index.mjs",
+    "register": "node src/register.mjs"
   },
   "dependencies": {
     "discord.js": "^14.19.3"
