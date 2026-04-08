@@ -19,12 +19,6 @@ const STATUS_DOT: Record<NonNullable<PanelProps['status']>, string> = {
   standby: 'bg-slate-600',
 }
 
-const STATUS_LABEL: Record<NonNullable<PanelProps['status']>, string> = {
-  ok: 'NOMINAL',
-  warn: 'CAUTION',
-  alert: 'ALERT',
-  standby: 'STANDBY',
-}
 
 export default function Panel({
   title,
@@ -53,15 +47,12 @@ export default function Panel({
         <div className="flex items-center justify-between gap-3 px-4 py-2 border-b border-slate-700/60 bg-slate-900/40">
           <div className="flex items-center gap-2 min-w-0">
             {status && (
-              <span className="flex items-center gap-1.5">
-                <span className={clsx('w-1.5 h-1.5', STATUS_DOT[status], status !== 'standby' && 'tactical-pulse')} />
-                <span className="text-[10px] tracking-[0.2em] text-slate-500 font-mono">{STATUS_LABEL[status]}</span>
-              </span>
+              <span className={clsx('w-1.5 h-1.5', STATUS_DOT[status], status !== 'standby' && 'tactical-pulse')} />
             )}
             {code && <span className="text-[10px] tracking-[0.2em] text-[oklch(0.78_0.17_75)] font-mono">{code}</span>}
             {title && (
               <h3 className="text-[11px] tracking-[0.2em] text-slate-200 font-mono uppercase truncate">
-                <span className="text-slate-600">[</span> {title} <span className="text-slate-600">]</span>
+                {title}
               </h3>
             )}
           </div>

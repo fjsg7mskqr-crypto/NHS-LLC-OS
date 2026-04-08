@@ -122,25 +122,24 @@ export default function ClockWidget() {
         <div className="flex items-center justify-between px-4 py-2 border-b border-slate-700/60 bg-slate-900/40">
           <div className="flex items-center gap-2">
             <span className="w-1.5 h-1.5 bg-[oklch(0.75_0.18_145)] shadow-[0_0_8px_oklch(0.75_0.18_145)] tactical-pulse" />
-            <span className="text-[10px] tracking-[0.2em] text-[oklch(0.75_0.18_145)]">ON DUTY</span>
-            <span className="text-[10px] tracking-[0.2em] text-slate-600">{'// CLK-001'}</span>
+            <span className="text-[10px] tracking-[0.2em] text-[oklch(0.75_0.18_145)]">CLOCKED IN</span>
           </div>
-          <span className="text-[10px] tracking-[0.2em] text-slate-500">[ {CATEGORY_LABELS[session?.category || 'client_work'].toUpperCase()} ]</span>
+          <span className="text-[10px] tracking-[0.2em] text-slate-500">{CATEGORY_LABELS[session?.category || 'client_work'].toUpperCase()}</span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] items-center gap-6 px-6 py-6">
           <div className="min-w-0">
-            <div className="text-[9px] tracking-[0.25em] text-slate-600 mb-2">▸ ACTIVE TARGET</div>
-            <p className="text-lg text-slate-100 uppercase tracking-wide truncate">
-              {clockedInClient?.name || 'NO CLIENT'}
-              {clockedInProperty && <span className="text-slate-500"> {'// '}{clockedInProperty.name}</span>}
+            <div className="text-[9px] tracking-[0.25em] text-slate-600 mb-2">CURRENT</div>
+            <p className="text-lg text-slate-100 tracking-wide truncate">
+              {clockedInClient?.name || 'No client'}
+              {clockedInProperty && <span className="text-slate-500"> · {clockedInProperty.name}</span>}
             </p>
             {clockedInJob && (
-              <p className="text-[11px] text-slate-400 mt-1 uppercase tracking-wide truncate">▸ {clockedInJob.title}</p>
+              <p className="text-[11px] text-slate-400 mt-1 truncate">{clockedInJob.title}</p>
             )}
             {session?.startTime && (
-              <p className="text-[10px] tracking-[0.2em] text-slate-600 mt-2">
-                {'T0 // '}{new Date(session.startTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}
+              <p className="text-[10px] tracking-[0.15em] text-slate-600 mt-2">
+                STARTED {new Date(session.startTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}
               </p>
             )}
           </div>
@@ -155,7 +154,7 @@ export default function ClockWidget() {
               className="mt-1 flex items-center gap-2 px-4 py-2 border border-[oklch(0.65_0.22_25)] bg-[oklch(0.65_0.22_25/0.1)] text-[oklch(0.65_0.22_25)] hover:bg-[oklch(0.65_0.22_25/0.2)] transition-colors text-[11px] tracking-[0.2em] disabled:opacity-50"
             >
               <Square className="w-3 h-3 fill-current" />
-              {saving ? 'TRANSMITTING...' : '[ DISENGAGE ]'}
+              {saving ? 'SAVING...' : 'CLOCK OUT'}
             </button>
           </div>
         </div>
@@ -174,13 +173,11 @@ export default function ClockWidget() {
       <div className="flex items-center justify-between px-4 py-2 border-b border-slate-700/60 bg-slate-900/40">
         <div className="flex items-center gap-2">
           <span className="w-1.5 h-1.5 bg-slate-600" />
-          <span className="text-[10px] tracking-[0.2em] text-slate-500">STANDBY</span>
-          <span className="text-[10px] tracking-[0.2em] text-slate-600">{'// CLK-001'}</span>
+          <span className="text-[10px] tracking-[0.2em] text-slate-500">CLOCKED OUT</span>
         </div>
-        <span className="text-[10px] tracking-[0.2em] text-slate-600">[ AWAITING ENGAGEMENT ]</span>
       </div>
       <div className="px-5 py-5">
-        <div className="text-[9px] tracking-[0.25em] text-slate-600 mb-3">▸ MISSION PARAMETERS</div>
+        <div className="text-[9px] tracking-[0.25em] text-slate-600 mb-3">CLOCK IN</div>
         <div className="flex flex-wrap gap-3 items-end">
           <div className="flex flex-col gap-1">
             <label className="text-[9px] tracking-[0.2em] text-slate-600">CATEGORY</label>
@@ -195,7 +192,7 @@ export default function ClockWidget() {
             <label className="text-[9px] tracking-[0.2em] text-slate-600">CLIENT</label>
             <div className="relative">
               <select value={clientId} onChange={e => { setClientId(e.target.value); setPropertyId(''); setJobId('') }} className={SELECT_CLS}>
-                <option value="">— NONE —</option>
+                <option value="">— None —</option>
                 {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
               <ChevronDown className="absolute right-2 top-2 w-3.5 h-3.5 text-slate-500 pointer-events-none" />
@@ -203,10 +200,10 @@ export default function ClockWidget() {
           </div>
           {clientId && clientProperties.length > 0 && (
             <div className="flex flex-col gap-1">
-              <label className="text-[9px] tracking-[0.2em] text-slate-600">SITE</label>
+              <label className="text-[9px] tracking-[0.2em] text-slate-600">PROPERTY</label>
               <div className="relative">
                 <select value={propertyId} onChange={e => setPropertyId(e.target.value)} className={SELECT_CLS}>
-                  <option value="">— NONE —</option>
+                  <option value="">— None —</option>
                   {clientProperties.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                 </select>
                 <ChevronDown className="absolute right-2 top-2 w-3.5 h-3.5 text-slate-500 pointer-events-none" />
@@ -217,7 +214,7 @@ export default function ClockWidget() {
             <label className="text-[9px] tracking-[0.2em] text-slate-600">JOB</label>
             <div className="relative">
               <select value={jobId} onChange={e => setJobId(e.target.value)} className={SELECT_CLS}>
-                <option value="">— NONE —</option>
+                <option value="">— None —</option>
                 {activeJobs.map(j => <option key={j.id} value={j.id}>{j.title}</option>)}
               </select>
               <ChevronDown className="absolute right-2 top-2 w-3.5 h-3.5 text-slate-500 pointer-events-none" />
@@ -227,7 +224,7 @@ export default function ClockWidget() {
             onClick={handleClockIn}
             className="flex items-center gap-2 px-5 py-2 border border-[oklch(0.78_0.17_75)] bg-[oklch(0.78_0.17_75/0.12)] text-[oklch(0.78_0.17_75)] hover:bg-[oklch(0.78_0.17_75/0.25)] transition-colors text-[11px] tracking-[0.2em]"
           >
-            <Play className="w-3 h-3 fill-current" /> [ ENGAGE ]
+            <Play className="w-3 h-3 fill-current" /> CLOCK IN
           </button>
         </div>
       </div>

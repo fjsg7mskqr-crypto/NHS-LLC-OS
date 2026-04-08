@@ -7,17 +7,17 @@ import { Briefcase, DollarSign, Sun, Menu, Clock, Users, FileText, Calendar } fr
 
 const ITEMS = [
   { group: 'NAVIGATE', items: [
-    { id: 'today', label: 'Today', code: 'NAV-001', icon: Sun, action: '/dashboard?section=today' },
-    { id: 'work', label: 'Work', code: 'NAV-002', icon: Briefcase, action: '/dashboard?section=work' },
-    { id: 'money', label: 'Money', code: 'NAV-003', icon: DollarSign, action: '/dashboard?section=money' },
-    { id: 'more', label: 'More', code: 'NAV-004', icon: Menu, action: '/dashboard?section=more' },
+    { id: 'today', label: 'Today', icon: Sun, action: '/dashboard?section=today' },
+    { id: 'work', label: 'Work', icon: Briefcase, action: '/dashboard?section=work' },
+    { id: 'money', label: 'Money', icon: DollarSign, action: '/dashboard?section=money' },
+    { id: 'more', label: 'More', icon: Menu, action: '/dashboard?section=more' },
   ]},
-  { group: 'OPERATIONS', items: [
-    { id: 'jobs', label: 'Active Jobs', code: 'OPS-101', icon: Briefcase, action: '/dashboard?section=work' },
-    { id: 'time', label: 'Time Entries', code: 'OPS-102', icon: Clock, action: '/dashboard?section=work' },
-    { id: 'clients', label: 'Clients', code: 'OPS-103', icon: Users, action: '/dashboard?section=work' },
-    { id: 'invoices', label: 'Invoices', code: 'OPS-201', icon: FileText, action: '/dashboard?section=money' },
-    { id: 'calendar', label: 'Calendar', code: 'OPS-301', icon: Calendar, action: '/dashboard?section=more' },
+  { group: 'JUMP TO', items: [
+    { id: 'jobs', label: 'Jobs', icon: Briefcase, action: '/dashboard?section=work' },
+    { id: 'time', label: 'Time Entries', icon: Clock, action: '/dashboard?section=work' },
+    { id: 'clients', label: 'Clients', icon: Users, action: '/dashboard?section=work' },
+    { id: 'invoices', label: 'Invoices', icon: FileText, action: '/dashboard?section=money' },
+    { id: 'calendar', label: 'Calendar', icon: Calendar, action: '/dashboard?section=more' },
   ]},
 ] as const
 
@@ -58,15 +58,15 @@ export default function CommandPalette() {
             <span className="text-[10px] tracking-[0.2em] text-[oklch(0.78_0.17_75)]">⌘K</span>
             <span className="text-slate-600">▸</span>
             <Command.Input
-              placeholder="ENTER COMMAND..."
-              className="flex-1 bg-transparent text-sm text-slate-100 placeholder:text-slate-600 outline-none uppercase tracking-wider"
+              placeholder="Search..."
+              className="flex-1 bg-transparent text-sm text-slate-100 placeholder:text-slate-600 outline-none tracking-wider"
               autoFocus
             />
-            <span className="text-[10px] text-slate-600">[ESC]</span>
+            <span className="text-[10px] text-slate-600">ESC</span>
           </div>
           <Command.List className="max-h-[50vh] overflow-y-auto p-2">
             <Command.Empty className="py-8 text-center text-xs tracking-[0.2em] text-slate-600">
-              [ NO MATCHING COMMANDS ]
+              NO RESULTS
             </Command.Empty>
             {ITEMS.map(group => (
               <Command.Group
@@ -79,7 +79,7 @@ export default function CommandPalette() {
                   return (
                     <Command.Item
                       key={item.id}
-                      value={`${item.label} ${item.code}`}
+                      value={item.label}
                       onSelect={() => {
                         router.push(item.action)
                         setOpen(false)
@@ -87,8 +87,7 @@ export default function CommandPalette() {
                       className="flex items-center gap-3 px-3 py-2 text-xs text-slate-300 cursor-pointer aria-selected:bg-[oklch(0.78_0.17_75/0.15)] aria-selected:text-[oklch(0.78_0.17_75)]"
                     >
                       <Icon className="w-3.5 h-3.5" />
-                      <span className="uppercase tracking-wider flex-1">{item.label}</span>
-                      <span className="text-[10px] text-slate-600">{item.code}</span>
+                      <span className="tracking-wider flex-1">{item.label}</span>
                     </Command.Item>
                   )
                 })}

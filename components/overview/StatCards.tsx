@@ -40,7 +40,6 @@ export default function StatCards() {
   const month = new Date().toLocaleString('en-US', { month: 'long', year: 'numeric' }).toUpperCase()
 
   type Card = {
-    code: string
     label: string
     icon: LucideIcon
     tone: Tone
@@ -52,10 +51,10 @@ export default function StatCards() {
   }
 
   const cards: Card[] = [
-    { code: 'OPS-101', label: 'ACTIVE OPS',    icon: Briefcase,  tone: 'amber', sub: 'IN PROGRESS',   value: stats?.activeJobs ?? 0 },
-    { code: 'TIME-201', label: 'HOURS / CYCLE', icon: Clock,      tone: 'blue',  sub: 'MON–SUN',       value: stats?.hoursThisWeek ?? 0, decimals: 1, suffix: 'h' },
-    { code: 'FIN-301', label: 'BILLABLE MTD',  icon: DollarSign, tone: 'green', sub: month,           value: stats?.billableMTD ?? 0, prefix: '$' },
-    { code: 'AR-401',  label: 'OUTSTANDING',   icon: FileText,   tone: (stats?.invoicesOutstanding ?? 0) > 0 ? 'red' : 'amber', sub: 'UNPAID',          value: stats?.invoicesOutstanding ?? 0, prefix: '$' },
+    { label: 'ACTIVE JOBS',     icon: Briefcase,  tone: 'amber', sub: 'IN PROGRESS', value: stats?.activeJobs ?? 0 },
+    { label: 'HOURS THIS WEEK', icon: Clock,      tone: 'blue',  sub: 'MON–SUN',     value: stats?.hoursThisWeek ?? 0, decimals: 1, suffix: 'h' },
+    { label: 'BILLABLE MTD',    icon: DollarSign, tone: 'green', sub: month,         value: stats?.billableMTD ?? 0, prefix: '$' },
+    { label: 'OUTSTANDING',     icon: FileText,   tone: (stats?.invoicesOutstanding ?? 0) > 0 ? 'red' : 'amber', sub: 'UNPAID', value: stats?.invoicesOutstanding ?? 0, prefix: '$' },
   ]
 
   return (
@@ -76,7 +75,7 @@ export default function StatCards() {
             <div className="flex items-center justify-between mb-3 font-mono">
               <div className="flex items-center gap-2">
                 <span className={`w-1.5 h-1.5 ${TONE_DOT[card.tone]} tactical-pulse`} />
-                <span className="text-[9px] tracking-[0.2em] text-slate-500">{card.code}</span>
+                <span className="text-[9px] tracking-[0.2em] text-slate-500">{card.label}</span>
               </div>
               <Icon className={`w-3.5 h-3.5 ${TONE_TEXT[card.tone]} opacity-80`} />
             </div>
@@ -89,8 +88,7 @@ export default function StatCards() {
               )}
             </div>
 
-            <div className="flex items-center justify-between mt-2 font-mono">
-              <span className="text-[10px] tracking-[0.15em] text-slate-300">{card.label}</span>
+            <div className="flex items-center justify-end mt-2 font-mono">
               <span className="text-[9px] tracking-[0.15em] text-slate-600">{card.sub}</span>
             </div>
 

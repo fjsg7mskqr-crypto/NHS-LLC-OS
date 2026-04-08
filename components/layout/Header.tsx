@@ -57,10 +57,9 @@ export default function Header({ userEmail }: HeaderProps) {
   }, [])
 
   const localTime = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`
-  const utcTime = `${pad(now.getUTCHours())}:${pad(now.getUTCMinutes())}:${pad(now.getUTCSeconds())}Z`
+  const utcTime = `${pad(now.getUTCHours())}:${pad(now.getUTCMinutes())}:${pad(now.getUTCSeconds())}`
   const dateStamp = now.toISOString().slice(0, 10)
-  const julian = Math.floor((Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()) - Date.UTC(now.getUTCFullYear(), 0, 0)) / 86400000)
-  const callsign = userEmail ? userEmail.split('@')[0].toUpperCase() : 'OPERATOR'
+  const callsign = userEmail ? userEmail.split('@')[0].toUpperCase() : 'USER'
 
   return (
     <header className="sticky top-0 z-30 border-b border-slate-700/60 bg-[oklch(0.12_0.02_240/0.95)] backdrop-blur-md">
@@ -78,16 +77,16 @@ export default function Header({ userEmail }: HeaderProps) {
             <span className="text-xs font-bold text-[oklch(0.78_0.17_75)]">N</span>
           </div>
           <div className="leading-none">
-            <div className="text-[11px] tracking-[0.25em] text-slate-100 font-bold">NHS-LLC OS</div>
-            <div className="text-[9px] tracking-[0.2em] text-slate-500 mt-0.5">TACTICAL OPERATIONS // v0.2</div>
+            <div className="text-[12px] tracking-[0.25em] text-slate-100 font-bold">NHS-LLC OS</div>
+            <div className="text-[9px] tracking-[0.2em] text-slate-500 mt-1">v0.2</div>
           </div>
         </div>
 
         {/* Center: time grid */}
         <div className="hidden md:flex items-center gap-0 h-full border-r border-slate-700/60">
           <TimeBlock label="LOCAL" value={localTime} accent="amber" />
-          <TimeBlock label="ZULU" value={utcTime} accent="blue" />
-          <TimeBlock label="STAMP" value={`${dateStamp} J${julian}`} />
+          <TimeBlock label="UTC" value={utcTime} accent="blue" />
+          <TimeBlock label="DATE" value={dateStamp} />
         </div>
 
         {/* Spacer */}
@@ -95,16 +94,16 @@ export default function Header({ userEmail }: HeaderProps) {
 
         {/* Right: status + clock state + user */}
         <div className="flex items-center h-full">
-          <StatusBlock label="LINK" tone={isSupabaseConfigured ? 'ok' : 'warn'} value={isSupabaseConfigured ? 'ONLINE' : 'DEMO'} icon={isSupabaseConfigured ? Wifi : WifiOff} />
+          <StatusBlock label="STATUS" tone={isSupabaseConfigured ? 'ok' : 'warn'} value={isSupabaseConfigured ? 'ONLINE' : 'DEMO'} icon={isSupabaseConfigured ? Wifi : WifiOff} />
           <StatusBlock
-            label="DUTY"
+            label="CLOCK"
             tone={clockedIn ? 'ok' : 'standby'}
             value={clockedIn ? elapsed : 'OFF'}
             icon={Activity}
             mono
           />
           <div className="hidden lg:flex flex-col px-4 border-l border-slate-700/60 h-full justify-center">
-            <span className="text-[9px] tracking-[0.2em] text-slate-500">OPERATOR</span>
+            <span className="text-[9px] tracking-[0.2em] text-slate-500">USER</span>
             <span className="text-[11px] text-slate-200 tracking-wider">{callsign}</span>
           </div>
           <form action="/auth/logout" method="post" className="h-full">

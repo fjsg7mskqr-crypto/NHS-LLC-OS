@@ -33,9 +33,10 @@ export default function TasksDue({ limit = 6 }: { limit?: number }) {
 
   function daysUntil(dateStr: string) {
     const diff = Math.round((new Date(dateStr + 'T12:00:00').getTime() - today.getTime()) / 86400000)
-    if (diff === 0) return 'T-00'
-    if (diff < 0) return `T+${Math.abs(diff).toString().padStart(2, '0')}`
-    return `T-${diff.toString().padStart(2, '0')}`
+    if (diff === 0) return 'TODAY'
+    if (diff === 1) return 'TOMORROW'
+    if (diff < 0) return `${Math.abs(diff)}D OVERDUE`
+    return `IN ${diff}D`
   }
 
   function urgencyTone(dateStr: string) {
@@ -47,15 +48,14 @@ export default function TasksDue({ limit = 6 }: { limit?: number }) {
 
   return (
     <Panel
-      title="MISSION QUEUE"
-      code="TSK-201"
+      title="TASKS DUE"
       status={upcoming.length > 0 ? 'warn' : 'standby'}
-      right={<span>{upcoming.length.toString().padStart(2, '0')} PENDING</span>}
+      right={<span>{upcoming.length} PENDING</span>}
       noPadding
     >
       {upcoming.length === 0 ? (
         <div className="py-10 text-center font-mono text-[10px] tracking-[0.25em] text-slate-600">
-          [ {loaded ? 'QUEUE EMPTY' : 'LOADING...'} ]
+          {loaded ? 'NO TASKS DUE' : 'LOADING...'}
         </div>
       ) : (
         <div className="font-mono">

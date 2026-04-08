@@ -13,9 +13,9 @@ interface JobRow {
 }
 
 const STATUS_TONE: Record<string, { dot: string; text: string; label: string }> = {
-  in_progress: { dot: 'bg-[oklch(0.75_0.18_145)] shadow-[0_0_6px_oklch(0.75_0.18_145)]', text: 'text-[oklch(0.75_0.18_145)]', label: 'ACTIVE' },
-  scheduled:   { dot: 'bg-[oklch(0.70_0.15_230)] shadow-[0_0_6px_oklch(0.70_0.15_230)]', text: 'text-[oklch(0.70_0.15_230)]', label: 'QUEUED' },
-  completed:   { dot: 'bg-slate-600',                                                     text: 'text-slate-500',              label: 'CLOSED' },
+  in_progress: { dot: 'bg-[oklch(0.75_0.18_145)] shadow-[0_0_6px_oklch(0.75_0.18_145)]', text: 'text-[oklch(0.75_0.18_145)]', label: 'IN PROGRESS' },
+  scheduled:   { dot: 'bg-[oklch(0.70_0.15_230)] shadow-[0_0_6px_oklch(0.70_0.15_230)]', text: 'text-[oklch(0.70_0.15_230)]', label: 'SCHEDULED' },
+  completed:   { dot: 'bg-slate-600',                                                     text: 'text-slate-500',              label: 'COMPLETED' },
 }
 
 export default function ActiveJobsTable() {
@@ -34,17 +34,16 @@ export default function ActiveJobsTable() {
 
   return (
     <Panel
-      title="ACTIVE OPERATIONS"
-      code="OPS-101"
+      title="ACTIVE JOBS"
       status={jobs.length > 0 ? 'ok' : 'standby'}
-      right={<span>{jobs.length.toString().padStart(2, '0')} TARGETS</span>}
+      right={<span>{jobs.length} TOTAL</span>}
       noPadding
     >
       {jobs.length === 0 ? (
         <div className="py-12 text-center font-mono">
           <Briefcase className="w-7 h-7 mx-auto mb-3 text-slate-700" />
           <div className="text-[10px] tracking-[0.25em] text-slate-600">
-            [ {loaded ? 'NO ACTIVE OPERATIONS' : 'ESTABLISHING UPLINK...'} ]
+            {loaded ? 'NO ACTIVE JOBS' : 'LOADING...'}
           </div>
         </div>
       ) : (
@@ -52,9 +51,9 @@ export default function ActiveJobsTable() {
           <table className="w-full font-mono">
             <thead>
               <tr className="border-b border-slate-700/60 bg-slate-900/30">
-                <th className="text-left px-4 py-2 text-[9px] tracking-[0.2em] text-slate-500">▸ DESIGNATOR</th>
+                <th className="text-left px-4 py-2 text-[9px] tracking-[0.2em] text-slate-500">JOB</th>
                 <th className="text-left px-3 py-2 text-[9px] tracking-[0.2em] text-slate-500">CLIENT</th>
-                <th className="text-left px-3 py-2 text-[9px] tracking-[0.2em] text-slate-500 hidden md:table-cell">SITE</th>
+                <th className="text-left px-3 py-2 text-[9px] tracking-[0.2em] text-slate-500 hidden md:table-cell">PROPERTY</th>
                 <th className="text-right px-4 py-2 text-[9px] tracking-[0.2em] text-slate-500">STATUS</th>
               </tr>
             </thead>

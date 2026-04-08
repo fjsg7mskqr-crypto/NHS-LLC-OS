@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 
-type TickerItem = { code: string; text: string; tone?: 'amber' | 'green' | 'blue' | 'red' }
+type TickerItem = { text: string; tone?: 'amber' | 'green' | 'blue' | 'red' }
 
 const TONE: Record<NonNullable<TickerItem['tone']>, string> = {
   amber: 'text-[oklch(0.78_0.17_75)]',
@@ -13,9 +13,8 @@ const TONE: Record<NonNullable<TickerItem['tone']>, string> = {
 
 export default function TelemetryTicker() {
   const [items, setItems] = useState<TickerItem[]>([
-    { code: 'SYS', text: 'NHS-LLC OS ONLINE', tone: 'green' },
-    { code: 'NET', text: 'SUPABASE LINK ESTABLISHED', tone: 'blue' },
-    { code: 'OPS', text: 'AWAITING TELEMETRY', tone: 'amber' },
+    { text: 'NHS-LLC OS online', tone: 'green' },
+    { text: 'Loading data...', tone: 'amber' },
   ])
 
   useEffect(() => {
@@ -27,23 +26,21 @@ export default function TelemetryTicker() {
           fetch('/api/jobs?status=in_progress').then(r => r.json()).catch(() => []),
         ])
         if (cancelled) return
-        const next: TickerItem[] = [
-          { code: 'SYS', text: `NHS-LLC OS // BUILD ${process.env.NEXT_PUBLIC_BUILD_ID || '0.2.0'} // OPERATIONAL`, tone: 'green' },
-        ]
+        const next: TickerItem[] = []
         if (statsRes) {
-          next.push({ code: 'OPS', text: `${statsRes.activeJobs ?? 0} ACTIVE OPERATIONS`, tone: 'amber' })
-          next.push({ code: 'TIME', text: `${(statsRes.hoursThisWeek ?? 0).toFixed(1)} HRS LOGGED THIS CYCLE`, tone: 'blue' })
-          next.push({ code: 'FIN', text: `$${Math.round(statsRes.billableMTD ?? 0).toLocaleString()} BILLABLE MTD`, tone: 'green' })
+          next.push({ text: `${statsRes.activeJobs ?? 0} active jobs`, tone: 'amber' })
+          next.push({ text: `${(statsRes.hoursThisWeek ?? 0).toFixed(1)} hours logged this week`, tone: 'blue' })
+          next.push({ text: `$${Math.round(statsRes.billableMTD ?? 0).toLocaleString()} billable this month`, tone: 'green' })
           if ((statsRes.invoicesOutstanding ?? 0) > 0) {
-            next.push({ code: 'AR', text: `$${Math.round(statsRes.invoicesOutstanding).toLocaleString()} OUTSTANDING`, tone: 'red' })
+            next.push({ text: `$${Math.round(statsRes.invoicesOutstanding).toLocaleString()} outstanding`, tone: 'red' })
           }
         }
         if (Array.isArray(jobsRes)) {
           for (const j of jobsRes.slice(0, 3)) {
-            next.push({ code: 'JOB', text: `${(j.title || 'UNTITLED').toUpperCase()} // IN PROGRESS`, tone: 'amber' })
+            next.push({ text: `${j.title || 'Untitled job'} — in progress`, tone: 'amber' })
           }
         }
-        next.push({ code: 'NET', text: 'ALL CHANNELS NOMINAL', tone: 'blue' })
+        if (next.length === 0) next.push({ text: 'All systems online', tone: 'green' })
         setItems(next)
       } catch {}
     }
@@ -62,15 +59,14 @@ export default function TelemetryTicker() {
       <div className="flex items-center h-7">
         <div className="flex items-center gap-2 px-3 border-r border-slate-700/60 h-full bg-[oklch(0.78_0.17_75/0.12)] flex-shrink-0">
           <span className="w-1.5 h-1.5 bg-[oklch(0.78_0.17_75)] tactical-pulse" />
-          <span className="text-[10px] tracking-[0.2em] text-[oklch(0.78_0.17_75)] font-mono">TELEMETRY</span>
+          <span className="text-[10px] tracking-[0.2em] text-[oklch(0.78_0.17_75)] font-mono">LIVE</span>
         </div>
         <div className="flex-1 overflow-hidden relative">
           <div className="ticker-track flex gap-8 whitespace-nowrap py-1">
             {doubled.map((it, i) => (
-              <span key={i} className="flex items-center gap-2 text-[10px] font-mono tracking-wider">
-                <span className="text-slate-600">[{it.code}]</span>
+              <span key={i} className="flex items-center gap-2 text-[11px] font-mono">
                 <span className={TONE[it.tone || 'amber']}>{it.text}</span>
-                <span className="text-slate-700">▸</span>
+                <span className="text-slate-700">·</span>
               </span>
             ))}
           </div>

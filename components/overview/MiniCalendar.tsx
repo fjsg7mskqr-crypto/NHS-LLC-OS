@@ -45,8 +45,7 @@ export default function MiniCalendar() {
 
   return (
     <Panel
-      title={`CAL // ${monthLabel}`}
-      code="CAL-301"
+      title={monthLabel}
       right={
         <span className="flex gap-1">
           <button onClick={prev} className="p-0.5 hover:text-[oklch(0.78_0.17_75)] transition-colors"><ChevronLeft className="w-3 h-3" /></button>
@@ -90,7 +89,7 @@ export default function MiniCalendar() {
           })}
         </div>
         <div className="flex gap-3 mt-3 pt-3 border-t border-slate-700/60 text-[9px] tracking-[0.15em] text-slate-600">
-          <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 bg-[oklch(0.75_0.18_145)]" />JOB</div>
+          <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 bg-[oklch(0.75_0.18_145)]" />JOB DAY</div>
           <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 bg-[oklch(0.78_0.17_75)]" />BOOKING</div>
         </div>
       </div>
