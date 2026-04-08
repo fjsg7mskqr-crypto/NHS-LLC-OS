@@ -1,4 +1,4 @@
-import { format } from 'date-fns'
+const APP_TIMEZONE = 'America/Detroit'
 
 export function formatCurrency(value: number | null | undefined) {
   return new Intl.NumberFormat('en-US', {
@@ -14,11 +14,22 @@ export function formatHours(minutes: number) {
 
 export function formatShortDate(value: string | null | undefined) {
   if (!value) return 'unscheduled'
-  return format(new Date(value), 'MMM d')
+  return new Intl.DateTimeFormat('en-US', {
+    timeZone: APP_TIMEZONE,
+    month: 'short',
+    day: 'numeric',
+  }).format(new Date(value))
 }
 
 export function formatDateTime(value: string) {
-  return format(new Date(value), 'MMM d, h:mm a')
+  return new Intl.DateTimeFormat('en-US', {
+    timeZone: APP_TIMEZONE,
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  }).format(new Date(value))
 }
 
 export function joinList(values: string[]) {
