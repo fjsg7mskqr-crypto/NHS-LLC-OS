@@ -391,7 +391,8 @@ const getOpenTasksAction: AssistantActionDefinition<GetOpenTasksArgs, Awaited<Re
     if (result.length === 0) return 'No open tasks.'
     const lines = result.map(task => {
       const priority = task.priority ? ` [${task.priority}]` : ''
-      return `• ${task.title}${priority}`
+      const property = task.property?.name ? ` — ${task.property.name}` : ''
+      return `• ${task.title}${property}${priority}`
     })
     return `Open tasks (${result.length}):\n${lines.join('\n')}`
   },
