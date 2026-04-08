@@ -87,15 +87,7 @@ export const MOCK_TASKS: Task[] = [
   { id: 'task8', job_id: 'j1', client_id: 'c1', title: 'Submit invoice for spring lawn startup', priority: 'medium', due_date: '2026-04-07', completed: false },
 ]
 
-export const MOCK_CALENDAR_BLOCKS: CalendarBlock[] = [
-  { id: 'cb1', property_id: 'p2', start_date: '2026-04-05', end_date: '2026-04-08', type: 'booking', notes: 'Hendersons' },
-  { id: 'cb2', property_id: 'p2', start_date: '2026-04-12', end_date: '2026-04-15', type: 'booking', notes: 'Williams family' },
-  { id: 'cb3', property_id: 'p3', start_date: '2026-04-06', end_date: '2026-04-07', type: 'booking', notes: 'Martin' },
-  { id: 'cb4', property_id: 'p5', start_date: '2026-04-10', end_date: '2026-04-14', type: 'booking', notes: 'Anderson cousins' },
-  { id: 'cb5', property_id: 'p4', start_date: '2026-04-07', end_date: '2026-04-07', type: 'job_day', notes: 'Mountain View opening cont.' },
-  { id: 'cb6', property_id: 'p2', start_date: '2026-04-04', end_date: '2026-04-04', type: 'job_day', notes: 'Deck stain final coat' },
-  { id: 'cb7', property_id: 'p1', start_date: '2026-04-09', end_date: '2026-04-09', type: 'job_day', notes: 'Miller irrigation timers' },
-]
+export const MOCK_CALENDAR_BLOCKS: CalendarBlock[] = []
 
 // ─── Computed helpers ────────────────────────────────────────────
 

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Plus, Trash2 } from 'lucide-react'
 import ErrorBanner from '@/components/ui/ErrorBanner'
 import CreateBlockModal from './CreateBlockModal'
 import type { CalendarBlock, Job } from '@/types'
@@ -63,6 +63,21 @@ export default function CalendarTab() {
   const [showCreate, setShowCreate] = useState(false)
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [listKey, setListKey] = useState(0)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+
+  async function handleDeleteBlock(id: string) {
+    if (!confirm('Delete this block? This cannot be undone.')) return
+    setDeletingId(id)
+    try {
+      const res = await fetch(`/api/calendar-blocks?id=${encodeURIComponent(id)}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('Failed to delete block')
+      setBlocks(prev => prev.filter(b => b.id !== id))
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to delete block')
+    } finally {
+      setDeletingId(null)
+    }
+  }
 
   useEffect(() => {
     (async () => {
@@ -370,11 +385,23 @@ export default function CalendarTab() {
               <p className="text-xs text-slate-500">Nothing scheduled</p>
             )}
             {selectedBlocks.map(b => (
-              <div key={b.id} className={`rounded-lg border p-3 ${blockColor(b.type)}`}>
-                <p className="text-xs font-medium">{BLOCK_LABELS[b.type] || b.type}</p>
-                {b.property && <p className="text-xs mt-1 opacity-80">{b.property.name}</p>}
-                {b.notes && <p className="text-xs mt-1 opacity-70">{b.notes}</p>}
-                <p className="text-[10px] mt-1 opacity-60">{b.start_date} - {b.end_date}</p>
+              <div key={b.id} className={`rounded-lg border p-3 ${blockColor(b.type)} relative group`}>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-medium">{BLOCK_LABELS[b.type] || b.type}</p>
+                    {b.property && <p className="text-xs mt-1 opacity-80">{b.property.name}</p>}
+                    {b.notes && <p className="text-xs mt-1 opacity-70">{b.notes}</p>}
+                    <p className="text-[10px] mt-1 opacity-60">{b.start_date} - {b.end_date}</p>
+                  </div>
+                  <button
+                    onClick={() => handleDeleteBlock(b.id)}
+                    disabled={deletingId === b.id}
+                    title="Delete block"
+                    className="flex-shrink-0 p-1 rounded hover:bg-red-500/20 text-current opacity-60 hover:opacity-100 hover:text-red-300 transition disabled:opacity-30"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
             ))}
             {selectedJobs.map(j => (
