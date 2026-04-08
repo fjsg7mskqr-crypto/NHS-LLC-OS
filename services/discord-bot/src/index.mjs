@@ -1,6 +1,7 @@
 import { Client, Events, GatewayIntentBits, InteractionType } from 'discord.js'
 import { interactionToAction } from './commands.mjs'
 import fs from 'node:fs'
+import http from 'node:http'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -150,6 +151,19 @@ client.on(Events.InteractionCreate, async interaction => {
     await interaction.editReply(msg)
   }
 })
+
+// Railway healthcheck keepalive — bind $PORT so the container is not killed
+// for failing to listen on a port. The bot itself is a Discord gateway worker
+// and has no HTTP surface, but Railway's default healthcheck expects one.
+const port = Number(process.env.PORT) || 3000
+http
+  .createServer((_req, res) => {
+    res.writeHead(200, { 'Content-Type': 'text/plain' })
+    res.end(client.isReady() ? 'ok' : 'starting')
+  })
+  .listen(port, () => {
+    console.log(`Healthcheck server listening on :${port}`)
+  })
 
 client.login(process.env.DISCORD_BOT_TOKEN)
 
