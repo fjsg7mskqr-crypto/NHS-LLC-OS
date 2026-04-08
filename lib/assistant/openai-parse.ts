@@ -131,6 +131,20 @@ const ACTION_TOOLS = [
   },
   {
     type: 'function',
+    name: 'get_open_tasks',
+    description: 'List the user\'s open tasks. Use this when the user asks what tasks they have, what to do today, or wants to see their task list.',
+    strict: false,
+    parameters: {
+      type: 'object',
+      properties: {
+        limit: { type: ['number', 'null'], description: 'Max tasks to return (default 10)' },
+      },
+      required: [],
+      additionalProperties: false,
+    },
+  },
+  {
+    type: 'function',
     name: 'get_status',
     description: 'Get current operational status.',
     strict: false,
@@ -253,6 +267,7 @@ export async function chooseAssistantActionWithOpenAI(input: {
         'Never invent clients, properties, jobs, tasks, or dates.',
         'If the user asks about billing this month, use get_billable_summary with period=month.',
         'If the user asks for status, use get_status.',
+        'If the user asks what tasks they have, what to do today, or to see their task list, use get_open_tasks (NOT get_status).',
       ].filter(Boolean).join(' '),
       input: input.message,
       tools: ACTION_TOOLS,

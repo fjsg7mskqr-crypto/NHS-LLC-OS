@@ -389,7 +389,11 @@ const getOpenTasksAction: AssistantActionDefinition<GetOpenTasksArgs, Awaited<Re
   },
   format(result) {
     if (result.length === 0) return 'No open tasks.'
-    return `Open tasks: ${joinList(result.slice(0, 5).map(task => task.title))}.`
+    const lines = result.map(task => {
+      const priority = task.priority ? ` [${task.priority}]` : ''
+      return `• ${task.title}${priority}`
+    })
+    return `Open tasks (${result.length}):\n${lines.join('\n')}`
   },
 }
 
