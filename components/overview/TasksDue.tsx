@@ -1,8 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { CheckSquare, Calendar } from 'lucide-react'
-import { priorityColor } from '@/lib/utils'
+import Panel from '@/components/ui/Panel'
 
 interface TaskRow {
   id: string
@@ -13,62 +12,79 @@ interface TaskRow {
   job: { title: string } | null
 }
 
+const PRIORITY_TONE: Record<string, string> = {
+  high:   'text-[oklch(0.65_0.22_25)] border-[oklch(0.65_0.22_25/0.4)]',
+  medium: 'text-[oklch(0.78_0.17_75)] border-[oklch(0.78_0.17_75/0.4)]',
+  low:    'text-[oklch(0.70_0.15_230)] border-[oklch(0.70_0.15_230/0.4)]',
+}
+
 export default function TasksDue({ limit = 6 }: { limit?: number }) {
   const [upcoming, setUpcoming] = useState<TaskRow[]>([])
+  const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
     fetch(`/api/tasks?limit=${limit}`)
       .then(r => r.json())
-      .then(data => setUpcoming(data || []))
-      .catch(() => {})
+      .then(data => { setUpcoming(data || []); setLoaded(true) })
+      .catch(() => setLoaded(true))
   }, [limit])
 
   const today = new Date()
 
   function daysUntil(dateStr: string) {
     const diff = Math.round((new Date(dateStr + 'T12:00:00').getTime() - today.getTime()) / 86400000)
-    if (diff === 0) return 'Today'
-    if (diff === 1) return 'Tomorrow'
-    if (diff < 0) return `${Math.abs(diff)}d overdue`
-    return `in ${diff}d`
+    if (diff === 0) return 'T-00'
+    if (diff < 0) return `T+${Math.abs(diff).toString().padStart(2, '0')}`
+    return `T-${diff.toString().padStart(2, '0')}`
   }
 
-  function urgencyColor(dateStr: string) {
+  function urgencyTone(dateStr: string) {
     const diff = Math.round((new Date(dateStr + 'T12:00:00').getTime() - today.getTime()) / 86400000)
-    if (diff <= 1) return 'text-red-400'
-    if (diff <= 3) return 'text-amber-400'
+    if (diff <= 1) return 'text-[oklch(0.65_0.22_25)]'
+    if (diff <= 3) return 'text-[oklch(0.78_0.17_75)]'
     return 'text-slate-500'
   }
 
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-900/50 overflow-hidden">
-      <div className="px-5 py-4 border-b border-slate-800 flex items-center gap-2">
-        <CheckSquare className="w-4 h-4 text-slate-400" />
-        <h2 className="font-semibold text-white">Tasks Due Soon</h2>
-      </div>
-      <div className="divide-y divide-slate-800/50">
-        {upcoming.map(task => (
-          <div key={task.id} className="px-5 py-3 hover:bg-slate-800/30 transition-colors">
-            <div className="flex items-start justify-between gap-2">
+    <Panel
+      title="MISSION QUEUE"
+      code="TSK-201"
+      status={upcoming.length > 0 ? 'warn' : 'standby'}
+      right={<span>{upcoming.length.toString().padStart(2, '0')} PENDING</span>}
+      noPadding
+    >
+      {upcoming.length === 0 ? (
+        <div className="py-10 text-center font-mono text-[10px] tracking-[0.25em] text-slate-600">
+          [ {loaded ? 'QUEUE EMPTY' : 'LOADING...'} ]
+        </div>
+      ) : (
+        <div className="font-mono">
+          {upcoming.map((task, idx) => (
+            <div
+              key={task.id}
+              className="flex items-start gap-3 px-4 py-2.5 border-b border-slate-800/60 last:border-b-0 hover:bg-[oklch(0.78_0.17_75/0.04)] transition-colors"
+            >
+              <span className="text-[9px] text-slate-700 mt-0.5">{String(idx + 1).padStart(2, '0')}</span>
               <div className="flex-1 min-w-0">
-                <p className="text-sm text-slate-200 leading-snug">{task.title}</p>
+                <p className="text-[12px] text-slate-200 leading-snug truncate">{task.title}</p>
                 {(task.client || task.job) && (
-                  <p className="text-xs text-slate-500 mt-0.5 truncate">
-                    {task.client?.name}{task.job && ` — ${task.job.title}`}
+                  <p className="text-[9px] tracking-[0.15em] text-slate-600 mt-0.5 truncate uppercase">
+                    {task.client?.name}{task.job && ` · ${task.job.title}`}
                   </p>
                 )}
               </div>
               <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${priorityColor(task.priority)}`}>{task.priority}</span>
-                <span className={`text-xs font-medium ${task.due_date ? urgencyColor(task.due_date) : 'text-slate-500'}`}>
-                  <Calendar className="w-3 h-3 inline mr-0.5" />
+                <span className={`text-[9px] tracking-[0.15em] px-1.5 py-px border ${PRIORITY_TONE[task.priority] || 'text-slate-500 border-slate-700'} uppercase`}>
+                  {task.priority}
+                </span>
+                <span className={`text-[10px] tabular-nums ${task.due_date ? urgencyTone(task.due_date) : 'text-slate-700'}`}>
                   {task.due_date ? daysUntil(task.due_date) : '—'}
                 </span>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
-    </div>
+          ))}
+        </div>
+      )}
+    </Panel>
   )
 }

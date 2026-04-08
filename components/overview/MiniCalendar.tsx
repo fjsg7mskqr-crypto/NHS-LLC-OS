@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import clsx from 'clsx'
+import Panel from '@/components/ui/Panel'
 
 interface Block {
   id: string
@@ -35,7 +36,7 @@ export default function MiniCalendar() {
     return monthBlocks.filter(b => b.start_date <= dateStr && b.end_date >= dateStr)
   }
 
-  const monthLabel = new Date(month.year, month.month, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+  const monthLabel = new Date(month.year, month.month, 1).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }).toUpperCase()
   const prev = () => month.month === 0 ? setMonth({ year: month.year - 1, month: 11 }) : setMonth({ ...month, month: month.month - 1 })
   const next = () => month.month === 11 ? setMonth({ year: month.year + 1, month: 0 }) : setMonth({ ...month, month: month.month + 1 })
 
@@ -43,21 +44,23 @@ export default function MiniCalendar() {
   while (cells.length % 7 !== 0) cells.push(null)
 
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-900/50 overflow-hidden">
-      <div className="px-5 py-4 border-b border-slate-800">
-        <div className="flex items-center justify-between">
-          <h2 className="font-semibold text-white text-sm">{monthLabel}</h2>
-          <div className="flex gap-1">
-            <button onClick={prev} className="p-1 rounded hover:bg-slate-700 text-slate-400 hover:text-slate-200 transition-colors"><ChevronLeft className="w-4 h-4" /></button>
-            <button onClick={next} className="p-1 rounded hover:bg-slate-700 text-slate-400 hover:text-slate-200 transition-colors"><ChevronRight className="w-4 h-4" /></button>
-          </div>
+    <Panel
+      title={`CAL // ${monthLabel}`}
+      code="CAL-301"
+      right={
+        <span className="flex gap-1">
+          <button onClick={prev} className="p-0.5 hover:text-[oklch(0.78_0.17_75)] transition-colors"><ChevronLeft className="w-3 h-3" /></button>
+          <button onClick={next} className="p-0.5 hover:text-[oklch(0.78_0.17_75)] transition-colors"><ChevronRight className="w-3 h-3" /></button>
+        </span>
+      }
+    >
+      <div className="font-mono">
+        <div className="grid grid-cols-7 mb-1">
+          {['S','M','T','W','T','F','S'].map((d, i) => (
+            <div key={i} className="text-center text-[9px] tracking-[0.15em] text-slate-600 py-1">{d}</div>
+          ))}
         </div>
-      </div>
-      <div className="p-4">
-        <div className="grid grid-cols-7 mb-2">
-          {['S','M','T','W','T','F','S'].map((d, i) => <div key={i} className="text-center text-xs text-slate-600 font-medium py-1">{d}</div>)}
-        </div>
-        <div className="grid grid-cols-7 gap-px">
+        <div className="grid grid-cols-7 gap-0.5">
           {cells.map((day, i) => {
             if (!day) return <div key={i} />
             const dateStr = `${month.year}-${String(month.month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
@@ -66,23 +69,31 @@ export default function MiniCalendar() {
             const hasSBR = dayBlocks.some(b => b.type === 'booking')
             const hasJob = dayBlocks.some(b => b.type === 'job_day')
             return (
-              <div key={i} className={clsx('flex flex-col items-center py-1.5 rounded-md', isToday && 'bg-emerald-500/20 ring-1 ring-emerald-500/50', !isToday && dayBlocks.length > 0 && 'bg-slate-800/50')}>
-                <span className={clsx('text-xs', isToday ? 'text-emerald-300 font-bold' : 'text-slate-300')}>{day}</span>
+              <div
+                key={i}
+                className={clsx(
+                  'flex flex-col items-center py-1 border text-[10px] tabular-nums relative',
+                  isToday && 'border-[oklch(0.78_0.17_75)] bg-[oklch(0.78_0.17_75/0.12)] text-[oklch(0.78_0.17_75)] font-bold',
+                  !isToday && dayBlocks.length > 0 && 'border-slate-700/60 bg-slate-800/40 text-slate-300',
+                  !isToday && dayBlocks.length === 0 && 'border-transparent text-slate-500'
+                )}
+              >
+                <span>{String(day).padStart(2, '0')}</span>
                 {(hasSBR || hasJob) && (
                   <div className="flex gap-0.5 mt-0.5">
-                    {hasJob && <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />}
-                    {hasSBR && <div className="w-1.5 h-1.5 rounded-full bg-orange-400" />}
+                    {hasJob && <div className="w-1 h-1 bg-[oklch(0.75_0.18_145)]" />}
+                    {hasSBR && <div className="w-1 h-1 bg-[oklch(0.78_0.17_75)]" />}
                   </div>
                 )}
               </div>
             )
           })}
         </div>
-        <div className="flex gap-4 mt-3 pt-3 border-t border-slate-800">
-          <div className="flex items-center gap-1.5 text-xs text-slate-500"><div className="w-2 h-2 rounded-full bg-emerald-400" />Job day</div>
-          <div className="flex items-center gap-1.5 text-xs text-slate-500"><div className="w-2 h-2 rounded-full bg-orange-400" />Booking</div>
+        <div className="flex gap-3 mt-3 pt-3 border-t border-slate-700/60 text-[9px] tracking-[0.15em] text-slate-600">
+          <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 bg-[oklch(0.75_0.18_145)]" />JOB</div>
+          <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 bg-[oklch(0.78_0.17_75)]" />BOOKING</div>
         </div>
       </div>
-    </div>
+    </Panel>
   )
 }

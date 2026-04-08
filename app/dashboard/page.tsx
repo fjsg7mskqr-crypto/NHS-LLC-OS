@@ -10,6 +10,13 @@ import MoreSection from '@/components/sections/MoreSection'
 
 const VALID_SECTIONS = new Set<string>(SECTIONS.map(s => s.id))
 
+const SECTION_META: Record<SectionId, { code: string; brief: string }> = {
+  today: { code: 'SEC-001 // SITREP',         brief: 'OPERATIONAL OVERVIEW // CURRENT CYCLE' },
+  work:  { code: 'SEC-002 // OPERATIONS',     brief: 'JOBS // TIME // CLIENTS' },
+  money: { code: 'SEC-003 // FINANCIAL',      brief: 'REVENUE // INVOICES // BURN' },
+  more:  { code: 'SEC-004 // SYSTEMS',        brief: 'CONFIG // INTEGRATIONS // STAFF' },
+}
+
 function DashboardContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -27,12 +34,30 @@ function DashboardContent() {
     [router]
   )
 
+  const meta = SECTION_META[activeSection]
+
   return (
-    <div className="flex flex-col min-h-full">
+    <div className="flex">
       <SectionNav activeSection={activeSection} onSectionChange={handleSectionChange} />
 
-      <div className="flex-1 max-w-screen-xl mx-auto w-full px-4 sm:px-6 py-6 pb-24 lg:pb-6">
-        <div className="tab-content" key={activeSection}>
+      <div className="flex-1 min-w-0 px-4 sm:px-6 lg:px-8 py-5 pb-24 lg:pb-8">
+        {/* Section header strip */}
+        <div className="mb-5 flex items-center justify-between gap-4 border-b border-slate-700/60 pb-3">
+          <div className="flex items-center gap-3 font-mono">
+            <span className="w-2 h-2 bg-[oklch(0.78_0.17_75)] tactical-pulse" />
+            <div className="leading-none">
+              <div className="text-[10px] tracking-[0.25em] text-[oklch(0.78_0.17_75)]">{meta.code}</div>
+              <div className="text-[9px] tracking-[0.2em] text-slate-500 mt-1">{meta.brief}</div>
+            </div>
+          </div>
+          <div className="hidden sm:flex items-center gap-2 text-[9px] tracking-[0.2em] text-slate-600 font-mono">
+            <span>SECTOR</span>
+            <span className="text-[oklch(0.78_0.17_75)]">{activeSection.toUpperCase()}</span>
+            <span>{'// CLEARED'}</span>
+          </div>
+        </div>
+
+        <div className="boot-sequence" key={activeSection}>
           {activeSection === 'today' && <TodaySection />}
           {activeSection === 'work' && <WorkSection />}
           {activeSection === 'money' && <MoneySection />}

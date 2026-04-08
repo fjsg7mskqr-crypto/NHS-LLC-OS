@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { ArrowUpRight, Briefcase } from 'lucide-react'
-import { statusColor } from '@/lib/utils'
+import Panel from '@/components/ui/Panel'
 
 interface JobRow {
   id: string
@@ -12,8 +12,15 @@ interface JobRow {
   property: { name: string } | null
 }
 
+const STATUS_TONE: Record<string, { dot: string; text: string; label: string }> = {
+  in_progress: { dot: 'bg-[oklch(0.75_0.18_145)] shadow-[0_0_6px_oklch(0.75_0.18_145)]', text: 'text-[oklch(0.75_0.18_145)]', label: 'ACTIVE' },
+  scheduled:   { dot: 'bg-[oklch(0.70_0.15_230)] shadow-[0_0_6px_oklch(0.70_0.15_230)]', text: 'text-[oklch(0.70_0.15_230)]', label: 'QUEUED' },
+  completed:   { dot: 'bg-slate-600',                                                     text: 'text-slate-500',              label: 'CLOSED' },
+}
+
 export default function ActiveJobsTable() {
   const [jobs, setJobs] = useState<JobRow[]>([])
+  const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
     Promise.all([
@@ -21,61 +28,68 @@ export default function ActiveJobsTable() {
       fetch('/api/jobs?status=scheduled').then(r => r.json()),
     ]).then(([inProgress, scheduled]) => {
       setJobs([...(inProgress || []), ...(scheduled || [])].slice(0, 10))
-    }).catch(() => {})
+      setLoaded(true)
+    }).catch(() => setLoaded(true))
   }, [])
 
-  if (jobs.length === 0) {
-    return (
-      <div className="rounded-xl border border-slate-800 bg-slate-900/50 overflow-hidden">
-        <div className="px-5 py-4 border-b border-slate-800 flex items-center justify-between">
-          <h2 className="font-semibold text-white">Active Jobs</h2>
-          <span className="text-xs text-slate-500">0 jobs</span>
-        </div>
-        <div className="py-10 text-center text-slate-500 text-sm">
-          <Briefcase className="w-8 h-8 mx-auto mb-2 text-slate-700 empty-state-icon" />
-          No active jobs
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-900/50 overflow-hidden">
-      <div className="px-5 py-4 border-b border-slate-800 flex items-center justify-between">
-        <h2 className="font-semibold text-white">Active Jobs</h2>
-        <span className="text-xs text-slate-500">{jobs.length} jobs</span>
-      </div>
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-slate-800">
-              <th className="text-left px-5 py-3 text-xs font-medium text-slate-500 uppercase tracking-wide">Job</th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wide">Client</th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wide hidden md:table-cell">Property</th>
-              <th className="text-center px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wide">Status</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-800/50">
-            {jobs.map(job => (
-              <tr key={job.id} className="hover:bg-slate-800/30 transition-colors group">
-                <td className="px-5 py-3.5">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-slate-200 group-hover:text-white transition-colors">{job.title}</span>
-                    <ArrowUpRight className="w-3.5 h-3.5 text-slate-600 group-hover:text-slate-400 transition-colors flex-shrink-0" />
-                  </div>
-                </td>
-                <td className="px-4 py-3.5"><span className="text-sm text-slate-400">{job.client?.name || '—'}</span></td>
-                <td className="px-4 py-3.5 hidden md:table-cell"><span className="text-sm text-slate-500">{job.property?.name || '—'}</span></td>
-                <td className="px-4 py-3.5 text-center">
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${statusColor(job.status)}`}>
-                    {job.status.replace('_', ' ')}
-                  </span>
-                </td>
+    <Panel
+      title="ACTIVE OPERATIONS"
+      code="OPS-101"
+      status={jobs.length > 0 ? 'ok' : 'standby'}
+      right={<span>{jobs.length.toString().padStart(2, '0')} TARGETS</span>}
+      noPadding
+    >
+      {jobs.length === 0 ? (
+        <div className="py-12 text-center font-mono">
+          <Briefcase className="w-7 h-7 mx-auto mb-3 text-slate-700" />
+          <div className="text-[10px] tracking-[0.25em] text-slate-600">
+            [ {loaded ? 'NO ACTIVE OPERATIONS' : 'ESTABLISHING UPLINK...'} ]
+          </div>
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full font-mono">
+            <thead>
+              <tr className="border-b border-slate-700/60 bg-slate-900/30">
+                <th className="text-left px-4 py-2 text-[9px] tracking-[0.2em] text-slate-500">▸ DESIGNATOR</th>
+                <th className="text-left px-3 py-2 text-[9px] tracking-[0.2em] text-slate-500">CLIENT</th>
+                <th className="text-left px-3 py-2 text-[9px] tracking-[0.2em] text-slate-500 hidden md:table-cell">SITE</th>
+                <th className="text-right px-4 py-2 text-[9px] tracking-[0.2em] text-slate-500">STATUS</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
+            </thead>
+            <tbody>
+              {jobs.map((job, idx) => {
+                const tone = STATUS_TONE[job.status] || STATUS_TONE.completed
+                return (
+                  <tr
+                    key={job.id}
+                    className="border-b border-slate-800/60 hover:bg-[oklch(0.78_0.17_75/0.04)] transition-colors group"
+                  >
+                    <td className="px-4 py-2.5">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[9px] text-slate-700">{String(idx + 1).padStart(2, '0')}</span>
+                        <span className="text-[12px] text-slate-200 group-hover:text-[oklch(0.78_0.17_75)] transition-colors uppercase tracking-wide">
+                          {job.title}
+                        </span>
+                        <ArrowUpRight className="w-3 h-3 text-slate-700 group-hover:text-[oklch(0.78_0.17_75)] transition-colors" />
+                      </div>
+                    </td>
+                    <td className="px-3 py-2.5"><span className="text-[11px] text-slate-400 uppercase tracking-wide">{job.client?.name || '—'}</span></td>
+                    <td className="px-3 py-2.5 hidden md:table-cell"><span className="text-[11px] text-slate-500 uppercase tracking-wide">{job.property?.name || '—'}</span></td>
+                    <td className="px-4 py-2.5 text-right">
+                      <span className={`inline-flex items-center gap-1.5 text-[10px] tracking-[0.15em] ${tone.text}`}>
+                        <span className={`w-1.5 h-1.5 ${tone.dot}`} />
+                        {tone.label}
+                      </span>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Panel>
   )
 }
