@@ -1,6 +1,7 @@
 import { type NextRequest } from 'next/server'
 import { createServerClient } from '@/lib/supabase-server'
 import { syncSquareInvoices } from '@/lib/domain/square'
+import { captureError } from '@/lib/logger'
 
 export async function GET(request: NextRequest) {
   // Verify the request is from Vercel Cron
@@ -15,6 +16,7 @@ export async function GET(request: NextRequest) {
     const result = await syncSquareInvoices(supabase)
     return Response.json(result)
   } catch (err) {
+    captureError(err, { route: '/api/cron/square-sync', method: 'GET' })
     const msg = err instanceof Error ? err.message : 'Unknown error'
     return Response.json({ error: msg }, { status: 500 })
   }

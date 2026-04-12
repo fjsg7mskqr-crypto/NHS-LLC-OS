@@ -4,6 +4,7 @@ import { runAssistantAction } from '@/lib/assistant/actions'
 import { logAssistantEvent } from '@/lib/domain/audit'
 import { mapDiscordInteractionToAction } from '@/lib/discord/commands'
 import { verifyDiscordRequest } from '@/lib/discord/verify'
+import { captureError } from '@/lib/logger'
 
 export const runtime = 'nodejs'
 
@@ -178,6 +179,7 @@ export async function POST(request: NextRequest) {
 
     return discordMessage(action.reply)
   } catch (error) {
+    captureError(error, { route: '/api/discord/interactions', method: 'POST' })
     return discordMessage(
       error instanceof Error ? error.message : 'Discord command failed'
     )

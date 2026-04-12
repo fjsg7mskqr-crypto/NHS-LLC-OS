@@ -4,6 +4,7 @@ import { runAssistantAction } from '@/lib/assistant/actions'
 import type { AssistantActionName, AssistantActor } from '@/lib/assistant/types'
 import { isAuthorizedAssistantServiceRequest } from '@/lib/assistant/service-auth'
 import { logAssistantEvent } from '@/lib/domain/audit'
+import { captureError } from '@/lib/logger'
 
 type ExecuteAssistantActionRequest = {
   action: {
@@ -57,6 +58,7 @@ export async function POST(request: NextRequest) {
       },
     })
   } catch (error) {
+    captureError(error, { route: '/api/assistant/execute', method: 'POST' })
     return Response.json(
       { error: error instanceof Error ? error.message : 'Assistant action failed' },
       { status: 400 }
