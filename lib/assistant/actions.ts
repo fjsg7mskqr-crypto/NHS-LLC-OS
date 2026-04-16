@@ -1,5 +1,7 @@
 import { format } from 'date-fns'
 import type {
+  AnnotateEntryArgs,
+  AnnotateSessionArgs,
   AssistantActionDefinition,
   AssistantActionName,
   AssistantActionResult,
@@ -9,18 +11,27 @@ import type {
   CompleteTaskArgs,
   CreateCalendarBlockArgs,
   CreateTaskArgs,
+  GetDebriefArgs,
   GetOpenTasksArgs,
   GetScheduleArgs,
   HoursSummaryArgs,
   LogTimeArgs,
   TriggerSquareSyncArgs,
   ValidationResult,
+  WriteDebriefArgs,
 } from './types'
-import { formatCurrency, formatDateTime, formatHours, joinList } from './format'
-import { resolveClientId, resolvePropertyId, resolveJobId, resolveTaskId } from './lookup'
+import { formatCurrency, formatDateTime, formatHours } from './format'
+import {
+  findMostRecentEntry,
+  resolveClientId,
+  resolveJobId,
+  resolvePropertyId,
+  resolveTaskId,
+} from './lookup'
 import {
   createClockSession,
   createTimeEntry,
+  getActiveClockSession,
   getBillableSummary,
   getHoursSummary,
   clockOutActiveSession,
@@ -31,6 +42,11 @@ import { completeTask, createTask, listOpenTasks, VALID_PRIORITIES } from '@/lib
 import { createCalendarBlock, getSchedule, VALID_BLOCK_TYPES } from '@/lib/domain/calendar'
 import { getStatusSnapshot } from '@/lib/domain/reports'
 import { syncSquareInvoices } from '@/lib/domain/square'
+import {
+  getDebrief,
+  todayLocalDate,
+  upsertDebrief,
+} from '@/lib/domain/debriefs'
 
 type ValidatedLogTimeArgs = LogTimeArgs & {
   start_time: string
@@ -445,6 +461,275 @@ const triggerSquareSyncAction: AssistantActionDefinition<
   },
 }
 
+type DebriefRow = Awaited<ReturnType<typeof upsertDebrief>>
+
+const writeDebriefAction: AssistantActionDefinition<
+  WriteDebriefArgs,
+  { debrief: DebriefRow; appended: boolean }
+> = {
+  name: 'write_debrief',
+  description: 'Create or update the day-level debrief notes for a date.',
+  readOnly: false,
+  validate(input) {
+    if (!isRecord(input)) return fail('write_debrief args must be an object')
+
+    const date = optionalString(input.date)
+    if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return fail('date must be a YYYY-MM-DD string')
+    }
+
+    const summary = optionalString(input.summary)
+    const wins = optionalString(input.wins)
+    const blockers = optionalString(input.blockers)
+    const followups = optionalString(input.followups)
+
+    if (!summary && !wins && !blockers && !followups) {
+      return fail('At least one of summary, wins, blockers, or followups is required')
+    }
+
+    return ok({
+      date: date || todayLocalDate(),
+      summary,
+      wins,
+      blockers,
+      followups,
+      append: optionalBoolean(input.append) ?? true,
+    })
+  },
+  async execute(context, args) {
+    const debrief = await upsertDebrief(context.supabase, args)
+    return { debrief, appended: args.append === true }
+  },
+  format(result) {
+    const fields: string[] = []
+    if (result.debrief.summary) fields.push('summary')
+    if (result.debrief.wins) fields.push('wins')
+    if (result.debrief.blockers) fields.push('blockers')
+    if (result.debrief.followups) fields.push('followups')
+    const verb = result.appended ? 'Updated' : 'Saved'
+    return `${verb} debrief for ${result.debrief.date} (${fields.join(', ') || 'empty'}).`
+  },
+}
+
+const getDebriefAction: AssistantActionDefinition<
+  GetDebriefArgs,
+  { debrief: DebriefRow | null; date: string }
+> = {
+  name: 'get_debrief',
+  description: 'Read the debrief notes for a date.',
+  readOnly: true,
+  validate(input) {
+    if (input !== undefined && !isRecord(input)) {
+      return fail('get_debrief args must be an object')
+    }
+    const date = isRecord(input) ? optionalString(input.date) : null
+    if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return fail('date must be a YYYY-MM-DD string')
+    }
+    return ok({ date: date || todayLocalDate() })
+  },
+  async execute(context, args) {
+    const debrief = await getDebrief(context.supabase, args.date)
+    return { debrief, date: args.date || todayLocalDate() }
+  },
+  format(result) {
+    if (!result.debrief) return `No debrief saved for ${result.date}.`
+    const parts: string[] = []
+    if (result.debrief.summary) parts.push(`Summary: ${result.debrief.summary}`)
+    if (result.debrief.wins) parts.push(`Wins: ${result.debrief.wins}`)
+    if (result.debrief.blockers) parts.push(`Blockers: ${result.debrief.blockers}`)
+    if (result.debrief.followups) parts.push(`Follow-ups: ${result.debrief.followups}`)
+    return `Debrief for ${result.date}:\n${parts.join('\n')}`
+  },
+}
+
+type AnnotateEntryResult = {
+  entry: { id: string; notes: string | null; client_id: string | null; property_id: string | null; job_id: string | null; billable: boolean }
+  applied: { notes_appended: boolean; fields_set: string[] }
+}
+
+async function patchTimeEntry(
+  supabase: import('@supabase/supabase-js').SupabaseClient,
+  entryId: string,
+  patch: Record<string, unknown>
+) {
+  const { data, error } = await supabase
+    .from('time_entries')
+    .update(patch)
+    .eq('id', entryId)
+    .select('id, notes, client_id, property_id, job_id, billable')
+    .single()
+  if (error) throw new Error(error.message)
+  return data
+}
+
+function buildEntryPatch(
+  current: { notes: string | null; client_id: string | null; property_id: string | null; job_id: string | null; billable: boolean },
+  args: { notes?: string | null; client_id?: string | null; property_id?: string | null; job_id?: string | null; billable?: boolean }
+) {
+  const patch: Record<string, unknown> = {}
+  const fieldsSet: string[] = []
+  let notesAppended = false
+
+  if (args.notes) {
+    const trimmed = args.notes.trim()
+    patch.notes = current.notes ? `${current.notes}\n${trimmed}` : trimmed
+    notesAppended = !!current.notes
+    fieldsSet.push('notes')
+  }
+  if (args.client_id) {
+    patch.client_id = args.client_id
+    fieldsSet.push('client_id')
+  }
+  if (args.property_id) {
+    patch.property_id = args.property_id
+    fieldsSet.push('property_id')
+  }
+  if (args.job_id) {
+    patch.job_id = args.job_id
+    fieldsSet.push('job_id')
+  }
+  if (typeof args.billable === 'boolean') {
+    patch.billable = args.billable
+    fieldsSet.push('billable')
+  }
+
+  return { patch, fieldsSet, notesAppended }
+}
+
+const annotateEntryAction: AssistantActionDefinition<
+  AnnotateEntryArgs,
+  AnnotateEntryResult
+> = {
+  name: 'annotate_entry',
+  description: 'Patch the most recent time entry — add notes or fix client/property/job after the fact.',
+  readOnly: false,
+  validate(input) {
+    if (!isRecord(input)) return fail('annotate_entry args must be an object')
+    const hasAny =
+      optionalString(input.notes) ||
+      optionalString(input.client_id) ||
+      optionalString(input.property_id) ||
+      optionalString(input.job_id) ||
+      typeof input.billable === 'boolean'
+    if (!hasAny) {
+      return fail('Provide at least one of notes, client_id, property_id, job_id, or billable')
+    }
+    return ok({
+      entry_id: optionalString(input.entry_id),
+      notes: optionalString(input.notes),
+      client_id: optionalString(input.client_id),
+      property_id: optionalString(input.property_id),
+      job_id: optionalString(input.job_id),
+      billable: optionalBoolean(input.billable),
+    })
+  },
+  async execute(context, args) {
+    let target: {
+      id: string
+      notes: string | null
+      client_id: string | null
+      property_id: string | null
+      job_id: string | null
+      billable: boolean
+    } | null = null
+
+    if (args.entry_id) {
+      const { data, error } = await context.supabase
+        .from('time_entries')
+        .select('id, notes, client_id, property_id, job_id, billable')
+        .eq('id', args.entry_id)
+        .maybeSingle()
+      if (error) throw new Error(error.message)
+      target = data
+    } else {
+      target = await findMostRecentEntry(context.supabase, { lookbackDays: 2 })
+    }
+
+    if (!target) throw new Error('No recent time entry found to annotate')
+
+    const { patch, fieldsSet, notesAppended } = buildEntryPatch(target, args)
+    const updated = await patchTimeEntry(context.supabase, target.id, patch)
+
+    return {
+      entry: updated,
+      applied: { fields_set: fieldsSet, notes_appended: notesAppended },
+    }
+  },
+  format(result) {
+    const fields = result.applied.fields_set.join(', ') || 'no changes'
+    return `Updated last entry (${fields}).`
+  },
+}
+
+type AnnotateSessionResult = {
+  target: 'session' | 'entry'
+  fields_set: string[]
+  notes_appended: boolean
+}
+
+const annotateSessionAction: AssistantActionDefinition<
+  AnnotateSessionArgs,
+  AnnotateSessionResult
+> = {
+  name: 'annotate_session',
+  description: 'Patch the active clock session — or fall back to the last time entry if not clocked in.',
+  readOnly: false,
+  validate(input) {
+    if (!isRecord(input)) return fail('annotate_session args must be an object')
+    const hasAny =
+      optionalString(input.notes) ||
+      optionalString(input.client_id) ||
+      optionalString(input.property_id) ||
+      optionalString(input.job_id) ||
+      typeof input.billable === 'boolean'
+    if (!hasAny) {
+      return fail('Provide at least one of notes, client_id, property_id, job_id, or billable')
+    }
+    return ok({
+      notes: optionalString(input.notes),
+      client_id: optionalString(input.client_id),
+      property_id: optionalString(input.property_id),
+      job_id: optionalString(input.job_id),
+      billable: optionalBoolean(input.billable),
+    })
+  },
+  async execute(context, args) {
+    const session = await getActiveClockSession(context.supabase)
+
+    if (session) {
+      const { patch, fieldsSet, notesAppended } = buildEntryPatch(
+        {
+          notes: session.notes ?? null,
+          client_id: session.client_id ?? null,
+          property_id: session.property_id ?? null,
+          job_id: session.job_id ?? null,
+          billable: session.billable ?? false,
+        },
+        args
+      )
+      const { error } = await context.supabase
+        .from('active_clock_sessions')
+        .update(patch)
+        .eq('id', session.id)
+      if (error) throw new Error(error.message)
+      return { target: 'session' as const, fields_set: fieldsSet, notes_appended: notesAppended }
+    }
+
+    const recent = await findMostRecentEntry(context.supabase, { lookbackDays: 2 })
+    if (!recent) throw new Error('Not clocked in and no recent entry to annotate')
+
+    const { patch, fieldsSet, notesAppended } = buildEntryPatch(recent, args)
+    await patchTimeEntry(context.supabase, recent.id, patch)
+    return { target: 'entry' as const, fields_set: fieldsSet, notes_appended: notesAppended }
+  },
+  format(result) {
+    const where = result.target === 'session' ? 'active session' : 'last entry'
+    const fields = result.fields_set.join(', ') || 'no changes'
+    return `Updated ${where} (${fields}).`
+  },
+}
+
 export const assistantActions = {
   clock_in: clockInAction,
   clock_out: clockOutAction,
@@ -458,6 +743,10 @@ export const assistantActions = {
   get_open_tasks: getOpenTasksAction,
   get_schedule: getScheduleAction,
   trigger_square_sync: triggerSquareSyncAction,
+  write_debrief: writeDebriefAction,
+  get_debrief: getDebriefAction,
+  annotate_entry: annotateEntryAction,
+  annotate_session: annotateSessionAction,
 }
 
 async function resolveEntityIds(

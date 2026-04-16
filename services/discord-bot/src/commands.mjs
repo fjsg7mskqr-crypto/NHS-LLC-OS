@@ -96,6 +96,38 @@ export const commands = [
   new SlashCommandBuilder()
     .setName('sync')
     .setDescription('Trigger Square invoice sync now'),
+
+  new SlashCommandBuilder()
+    .setName('debrief')
+    .setDescription('End-of-day reflection notes (appends to today by default)')
+    .addStringOption(opt =>
+      opt.setName('summary').setDescription('Free-form recap of what you did').setRequired(false))
+    .addStringOption(opt =>
+      opt.setName('wins').setDescription('Wins for the day').setRequired(false))
+    .addStringOption(opt =>
+      opt.setName('blockers').setDescription('Blockers').setRequired(false))
+    .addStringOption(opt =>
+      opt.setName('followups').setDescription('Follow-ups for tomorrow').setRequired(false))
+    .addStringOption(opt =>
+      opt.setName('date').setDescription('YYYY-MM-DD (defaults to today)').setRequired(false))
+    .addBooleanOption(opt =>
+      opt.setName('replace').setDescription('Overwrite instead of append').setRequired(false)),
+
+  new SlashCommandBuilder()
+    .setName('note')
+    .setDescription('Add a note to your active timer (or last entry if not clocked in)')
+    .addStringOption(opt =>
+      opt.setName('text').setDescription('Note to append').setRequired(true)),
+
+  new SlashCommandBuilder()
+    .setName('attach')
+    .setDescription('Set client/property/job on your active timer or last entry')
+    .addStringOption(opt =>
+      opt.setName('client').setDescription('Client name').setRequired(false))
+    .addStringOption(opt =>
+      opt.setName('property').setDescription('Property name').setRequired(false))
+    .addStringOption(opt =>
+      opt.setName('job').setDescription('Job title').setRequired(false)),
 ]
 
 /** Map a slash command interaction to an assistant action object */
@@ -103,6 +135,7 @@ export function interactionToAction(interaction) {
   const name = interaction.commandName
   const get = (key) => interaction.options.getString(key) || undefined
   const getNum = (key) => interaction.options.getNumber(key) || undefined
+  const getBool = (key) => interaction.options.getBoolean(key) ?? undefined
 
   switch (name) {
     case 'clockin':
@@ -172,6 +205,37 @@ export function interactionToAction(interaction) {
 
     case 'sync':
       return { name: 'trigger_square_sync', args: {} }
+
+    case 'debrief': {
+      const replace = getBool('replace')
+      return {
+        name: 'write_debrief',
+        args: {
+          summary: get('summary'),
+          wins: get('wins'),
+          blockers: get('blockers'),
+          followups: get('followups'),
+          date: get('date'),
+          append: replace ? false : true,
+        },
+      }
+    }
+
+    case 'note':
+      return {
+        name: 'annotate_session',
+        args: { notes: get('text') },
+      }
+
+    case 'attach':
+      return {
+        name: 'annotate_session',
+        args: {
+          client_id: get('client'),
+          property_id: get('property'),
+          job_id: get('job'),
+        },
+      }
 
     default:
       return null

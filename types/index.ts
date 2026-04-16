@@ -157,3 +157,23 @@ export interface ClockSession {
   propertyId: string
   category: CategoryType
 }
+
+export interface Debrief {
+  id: string
+  date: string
+  summary?: string
+  wins?: string
+  blockers?: string
+  followups?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface DebriefContext {
+  date: string
+  total_minutes: number
+  billable_minutes: number
+  billable_amount: number
+  entry_count: number
+  clients: Array<{ id: string; name: string }>
+}

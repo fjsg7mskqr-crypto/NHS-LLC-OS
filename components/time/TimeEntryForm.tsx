@@ -218,8 +218,8 @@ export default function TimeEntryForm({
             <label htmlFor="te-billable" className="text-sm text-slate-300">Billable</label>
           </div>
           <div>
-            <label htmlFor="te-notes" className="block text-xs text-slate-500 mb-1">Notes</label>
-            <textarea id="te-notes" value={form.notes} onChange={e => set('notes', e.target.value)} rows={3} placeholder="What did you work on?" className={`${inputClass} resize-none`} />
+            <label htmlFor="te-notes" className="block text-xs text-slate-500 mb-1">Debrief / Notes</label>
+            <textarea id="te-notes" value={form.notes} onChange={e => set('notes', e.target.value)} rows={5} placeholder="What did you do? Wins, blockers, follow-ups welcome." className={`${inputClass} resize-none`} />
           </div>
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose} className="flex-1 px-4 py-2 rounded-lg border border-slate-700 text-slate-400 hover:text-slate-200 hover:border-slate-600 text-sm font-medium transition-colors">Cancel</button>

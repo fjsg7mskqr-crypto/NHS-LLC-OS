@@ -15,6 +15,10 @@ export type AssistantActionName =
   | 'get_open_tasks'
   | 'get_schedule'
   | 'trigger_square_sync'
+  | 'write_debrief'
+  | 'get_debrief'
+  | 'annotate_entry'
+  | 'annotate_session'
 
 export type AssistantHistoryMessage = {
   role: 'user' | 'assistant'
@@ -124,6 +128,36 @@ export type GetScheduleArgs = {
 
 export type TriggerSquareSyncArgs = {
   force?: boolean
+}
+
+export type WriteDebriefArgs = {
+  date?: string
+  summary?: string | null
+  wins?: string | null
+  blockers?: string | null
+  followups?: string | null
+  append?: boolean
+}
+
+export type GetDebriefArgs = {
+  date?: string
+}
+
+export type AnnotateEntryArgs = {
+  entry_id?: string | null
+  notes?: string | null
+  client_id?: string | null
+  property_id?: string | null
+  job_id?: string | null
+  billable?: boolean
+}
+
+export type AnnotateSessionArgs = {
+  notes?: string | null
+  client_id?: string | null
+  property_id?: string | null
+  job_id?: string | null
+  billable?: boolean
 }
 
 export type AssistantActor = {

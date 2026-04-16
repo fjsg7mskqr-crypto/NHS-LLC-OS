@@ -114,3 +114,32 @@ export async function resolveTaskId(supabase: SupabaseClient, value?: string | n
   )
   return task.id as string
 }
+
+/**
+ * Find the most recently started time entry. Defaults to today (local TZ),
+ * but with `lookbackDays` will widen the search window — useful when the
+ * user references "the last entry" hours after midnight.
+ */
+export async function findMostRecentEntry(
+  supabase: SupabaseClient,
+  options?: { lookbackDays?: number }
+) {
+  const lookback = options?.lookbackDays ?? 1
+  const since = new Date()
+  since.setDate(since.getDate() - lookback)
+
+  const { data, error } = await supabase
+    .from('time_entries')
+    .select('id, start_time, end_time, notes, client_id, property_id, job_id, category, billable')
+    .gte('start_time', since.toISOString())
+    .order('start_time', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (error) {
+    if (error.message.toLowerCase().includes('relation')) return null
+    throw new Error(error.message)
+  }
+
+  return data
+}

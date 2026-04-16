@@ -8,6 +8,7 @@ import {
 } from 'date-fns'
 import { utcToLocalDate } from '@/lib/timezone'
 import DailyTimeline from './DailyTimeline'
+import DebriefPanel from './DebriefPanel'
 import WeeklyChart from './WeeklyChart'
 import CategoryBreakdown from './CategoryBreakdown'
 import ProfitabilityTables from './ProfitabilityTables'
@@ -387,6 +388,7 @@ export default function TimeTab() {
         {/* Right: Timeline + charts */}
         <div className="flex-1 space-y-6">
           <DailyTimeline key={`${timelineDate}-${refreshKey}`} date={timelineDate} onEdit={handleEdit} onDelete={handleSaved} />
+          {viewMode === 'day' && <DebriefPanel key={`debrief-${timelineDate}`} date={timelineDate} />}
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
             <div className="xl:col-span-2"><WeeklyChart key={`${weekStart}-${refreshKey}`} weekStart={weekStart} /></div>
             <div><CategoryBreakdown key={`${weekStart}-${refreshKey}`} weekStart={weekStart} /></div>

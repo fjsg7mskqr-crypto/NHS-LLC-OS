@@ -181,6 +181,75 @@ const ACTION_TOOLS = [
       additionalProperties: false,
     },
   },
+  {
+    type: 'function',
+    name: 'write_debrief',
+    description: 'Save end-of-day reflection notes for a date. Use when the user reflects on what they did, wins, blockers, or follow-ups for a day. Defaults to today and APPENDS by default — multiple messages on the same day build up the same debrief.',
+    strict: false,
+    parameters: {
+      type: 'object',
+      properties: {
+        date: { type: ['string', 'null'], description: 'YYYY-MM-DD. Defaults to today.' },
+        summary: { type: ['string', 'null'], description: 'Free-form recap of what happened today.' },
+        wins: { type: ['string', 'null'] },
+        blockers: { type: ['string', 'null'] },
+        followups: { type: ['string', 'null'] },
+        append: { type: ['boolean', 'null'], description: 'Default true. Set false only if user explicitly says "replace" or "overwrite".' },
+      },
+      required: [],
+      additionalProperties: false,
+    },
+  },
+  {
+    type: 'function',
+    name: 'get_debrief',
+    description: 'Read the debrief notes for a date. Defaults to today.',
+    strict: false,
+    parameters: {
+      type: 'object',
+      properties: {
+        date: { type: ['string', 'null'], description: 'YYYY-MM-DD. Defaults to today.' },
+      },
+      required: [],
+      additionalProperties: false,
+    },
+  },
+  {
+    type: 'function',
+    name: 'annotate_entry',
+    description: 'Patch the most recent time entry — add notes or fix a missing client/property/job after the fact. Use when the user says "that last entry was…", "the block I just logged was at X", "add notes to my last clock-out", etc. Does NOT create a new entry.',
+    strict: false,
+    parameters: {
+      type: 'object',
+      properties: {
+        notes: { type: ['string', 'null'], description: 'Notes to APPEND to the entry.' },
+        client: { type: ['string', 'null'], description: 'Client name to attach (e.g. "SBR").' },
+        property: { type: ['string', 'null'], description: 'Property name to attach.' },
+        job: { type: ['string', 'null'], description: 'Job title to attach.' },
+        billable: { type: ['boolean', 'null'] },
+      },
+      required: [],
+      additionalProperties: false,
+    },
+  },
+  {
+    type: 'function',
+    name: 'annotate_session',
+    description: 'Patch the active clock session — set a missing client/property/job or add notes mid-shift. If not currently clocked in, falls back to the most recent entry. Use when the user says "I\'m at SBR now", "add a note to my current timer", etc.',
+    strict: false,
+    parameters: {
+      type: 'object',
+      properties: {
+        notes: { type: ['string', 'null'], description: 'Notes to APPEND.' },
+        client: { type: ['string', 'null'] },
+        property: { type: ['string', 'null'] },
+        job: { type: ['string', 'null'] },
+        billable: { type: ['boolean', 'null'] },
+      },
+      required: [],
+      additionalProperties: false,
+    },
+  },
 ] as const
 
 function getOpenAIKey() {
@@ -193,6 +262,80 @@ function getOpenAIKey() {
 
 function getOpenAIModel() {
   return process.env.OPENAI_ASSISTANT_MODEL || 'gpt-5-mini'
+}
+
+/**
+ * Map a known IANA timezone to its current UTC offset string (e.g. "-04:00").
+ * Used as a fallback when the model emits clock times that should be interpreted
+ * as local — we anchor them to today + this offset.
+ */
+function getTimezoneOffset(timezone: string, dateISO: string): string {
+  // Use Intl to get the offset for a given date in the given timezone.
+  const d = new Date(`${dateISO}T12:00:00Z`)
+  const fmt = new Intl.DateTimeFormat('en-US', {
+    timeZone: timezone,
+    timeZoneName: 'shortOffset',
+  })
+  const parts = fmt.formatToParts(d)
+  const tzName = parts.find(p => p.type === 'timeZoneName')?.value || 'GMT+0'
+  // tzName looks like "GMT-4" or "GMT+5:30" — normalize to "-04:00"
+  const match = tzName.match(/GMT([+-])(\d{1,2})(?::(\d{2}))?/)
+  if (!match) return '+00:00'
+  const sign = match[1]
+  const hh = match[2].padStart(2, '0')
+  const mm = (match[3] || '00').padStart(2, '0')
+  return `${sign}${hh}:${mm}`
+}
+
+/**
+ * Detect an explicit clock-time range in the user's message (e.g. "9:30-10:45",
+ * "9 to 11am", "from 9:00 to 12:30"). Returns ISO strings anchored to today
+ * in the user's timezone if matched, else null.
+ *
+ * Conservative on purpose: only fires when both endpoints are clearly clock
+ * times. A bare "75 minutes" or "an hour" never triggers this.
+ */
+export function extractClockRange(
+  message: string,
+  todayISO: string,
+  timezone: string
+): { start: string; end: string } | null {
+  // Match patterns like "9:30-10:45", "9-11", "9:30 to 10:45", "9am to 11am"
+  const re = /(\d{1,2})(?::(\d{2}))?\s*(am|pm|a|p)?\s*[-–—]|\bto\b\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm|a|p)?/i
+  // Simpler: find two clock times near each other with a separator
+  const pattern = /\b(\d{1,2})(?::(\d{2}))?\s*(am|pm|a|p)?\s*(?:[-–—]|to)\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm|a|p)?\b/i
+  const m = message.match(pattern)
+  void re
+  if (!m) return null
+
+  const parseTime = (h: string, min: string | undefined, mer: string | undefined, contextMer?: string): { h: number; m: number } | null => {
+    let hour = parseInt(h, 10)
+    const minute = min ? parseInt(min, 10) : 0
+    if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return null
+    const meridiem = (mer || contextMer || '').toLowerCase()
+    if (meridiem.startsWith('p') && hour < 12) hour += 12
+    if (meridiem.startsWith('a') && hour === 12) hour = 0
+    return { h: hour, m: minute }
+  }
+
+  // If only the end has a meridiem (e.g. "9-11am"), apply it to the start too
+  // when the start is ambiguous (no meridiem, hour <= 12).
+  const startMer = m[3]
+  const endMer = m[6]
+  const inferredMer = startMer || endMer
+
+  const start = parseTime(m[1], m[2], startMer, inferredMer)
+  const end = parseTime(m[4], m[5], endMer, inferredMer)
+  if (!start || !end) return null
+
+  // Reject nonsensical ranges (start >= end and not crossing meridian).
+  if (start.h * 60 + start.m >= end.h * 60 + end.m) return null
+
+  const offset = getTimezoneOffset(timezone, todayISO)
+  const fmt = (t: { h: number; m: number }) =>
+    `${todayISO}T${String(t.h).padStart(2, '0')}:${String(t.m).padStart(2, '0')}:00${offset}`
+
+  return { start: fmt(start), end: fmt(end) }
 }
 
 export async function chooseAssistantActionWithOpenAI(input: {
@@ -257,7 +400,7 @@ export async function chooseAssistantActionWithOpenAI(input: {
         'Use sensible defaults: category defaults to client_work, billable defaults to true for client_work.',
         'If the user says "log time" or "time card entry", you only need to ask how long (minutes or hours) — everything else is optional.',
         `The user is in the ${tz} timezone. The current local time is ${nowLocal} and today's date is ${todayISO}.`,
-        'When the user provides specific start and end times (like "9:30 AM to 10:45 AM"), use start_time and end_time as ISO 8601 strings for today in their timezone. Do NOT convert to minutes — pass the exact times.',
+        'CRITICAL TIME RULE: When the user provides explicit clock times (like "9:30 to 10:45", "9:30am-10:45am", "from 9 to 11"), you MUST use start_time and end_time as ISO 8601 strings for the user\'s local date in their timezone. DO NOT use minutes. DO NOT use the current time. Example: input "log 9:30-10:45 today" with today=' + todayISO + ' and tz=' + tz + ' → start_time="' + todayISO + 'T09:30:00" end_time="' + todayISO + 'T10:45:00". Only use minutes when the user gives ONLY a duration with no clock times (e.g. "log 75 minutes admin").',
         'When you need clarification, ask ONE simple follow-up question in plain English. Never list raw field names or IDs.',
         'For example, ask "How long did you work?" not "Please provide: minutes, category, client_id...".',
         entityContext
@@ -268,6 +411,9 @@ export async function chooseAssistantActionWithOpenAI(input: {
         'If the user asks about billing this month, use get_billable_summary with period=month.',
         'If the user asks for status, use get_status.',
         'If the user asks what tasks they have, what to do today, or to see their task list, use get_open_tasks (NOT get_status).',
+        'DEBRIEFS: When the user reflects on what they did today/this morning/this afternoon, names wins or blockers, or sends an end-of-day recap, use write_debrief with append=true. DO NOT create a time entry for a reflection. Examples: "today I finished the Den deck and started painting" → write_debrief; "blocker: waiting on stain delivery" → write_debrief.',
+        'ANNOTATIONS: When the user references something already logged ("that last entry…", "the block I just clocked out…", "add a note to my last timer", "I forgot to set the client on…"), use annotate_entry. When they reference the active timer ("I\'m at SBR now", "switch the current timer to drive time", "add notes to my current shift"), use annotate_session. DO NOT create new entries for these.',
+        'NEVER call log_time when the user is reflecting, annotating, or correcting an existing entry — those are write_debrief, annotate_entry, or annotate_session.',
       ].filter(Boolean).join(' '),
       input: input.message,
       tools: ACTION_TOOLS,
@@ -309,6 +455,19 @@ export async function chooseAssistantActionWithOpenAI(input: {
       if (args.property !== undefined) { args.property_id = args.property; delete args.property }
       if (args.job !== undefined) { args.job_id = args.job; delete args.job }
       if (args.task !== undefined) { args.task_id = args.task; delete args.task }
+
+      // Safety net for the log_time literal-time bug: if the user message contained
+      // an explicit time range but the model only returned minutes (anchored to "now"),
+      // reconstruct start_time/end_time from the message and drop minutes.
+      if (tc.name === 'log_time') {
+        const hadExplicitRange = extractClockRange(input.message, todayISO, tz)
+        const hasIsoTimes = typeof args.start_time === 'string' && typeof args.end_time === 'string'
+        if (hadExplicitRange && !hasIsoTimes) {
+          args.start_time = hadExplicitRange.start
+          args.end_time = hadExplicitRange.end
+          delete args.minutes
+        }
+      }
 
       return { name: tc.name as AssistantActionName, args }
     })

@@ -164,6 +164,11 @@ export async function clockOutActiveSession(
     throw new Error('No active clock session found')
   }
 
+  const mergedNotes = [session.notes, input?.notes]
+    .map(part => (part ? String(part).trim() : ''))
+    .filter(Boolean)
+    .join('\n') || null
+
   const entry = await createTimeEntry(supabase, {
     job_id: session.job_id,
     client_id: session.client_id,
@@ -171,7 +176,7 @@ export async function clockOutActiveSession(
     category: session.category,
     start_time: session.started_at,
     end_time: input?.end_time || new Date().toISOString(),
-    notes: input?.notes || session.notes || null,
+    notes: mergedNotes,
     billable: session.billable ?? false,
     hourly_rate: session.hourly_rate ?? null,
     source: 'assistant',
