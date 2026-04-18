@@ -261,7 +261,7 @@ function getOpenAIKey() {
 }
 
 function getOpenAIModel() {
-  return process.env.OPENAI_ASSISTANT_MODEL || 'gpt-5-mini'
+  return process.env.OPENAI_ASSISTANT_MODEL || 'gpt-5.4-mini'
 }
 
 /**
