@@ -216,22 +216,10 @@ async function generatePDF(
   endDate: string,
 ) {
   const { jsPDF } = await import('jspdf')
-  await import('jspdf-autotable')
+  const { default: autoTable } = await import('jspdf-autotable')
 
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'letter' })
-  const autoTableDoc = doc as typeof doc & {
-    autoTable: (options: {
-      startY: number
-      head: string[][]
-      body: string[][]
-      theme: 'striped'
-      styles: { fontSize: number; cellPadding: number }
-      headStyles: { fillColor: number[]; textColor: number[]; fontSize: number }
-      margin: { left: number; right: number }
-      didDrawPage: () => void
-    }) => void
-    lastAutoTable: { finalY: number }
-  }
+  const docWithTable = doc as typeof doc & { lastAutoTable: { finalY: number } }
 
   const totalMinutes = entries.reduce((s, e) => s + (e.duration_minutes || 0), 0)
   const totalHours = totalMinutes / 60
@@ -329,7 +317,7 @@ async function generatePDF(
         ]
       })
 
-      autoTableDoc.autoTable({
+      autoTable(doc, {
         startY: yPos,
         head: [['Date', 'Day', 'Start', 'End', 'Duration', 'Job', 'Category', 'Bill?', 'Rate', 'Amount', 'Notes']],
         body: tableBody,
@@ -337,10 +325,9 @@ async function generatePDF(
         styles: { fontSize: 8, cellPadding: 1.5 },
         headStyles: { fillColor: [30, 41, 59], textColor: [255, 255, 255], fontSize: 8 },
         margin: { left: 14, right: 14 },
-        didDrawPage: () => {},
       })
 
-      yPos = autoTableDoc.lastAutoTable.finalY + 6
+      yPos = docWithTable.lastAutoTable.finalY + 6
     }
 
     // Client subtotal line
@@ -472,8 +459,9 @@ export default function TimesheetExportPanel() {
       const csv = csvFormat === 'timecard' ? generateTimecardCSV(entries) : generateCSV(entries)
       const filename = `timesheet_${range.start}_${range.end}.csv`
       downloadBlob(csv, filename, 'text/csv;charset=utf-8;')
-    } catch {
-      setError('Failed to generate CSV.')
+    } catch (err) {
+      console.error('CSV export failed:', err)
+      setError(`Failed to generate CSV: ${err instanceof Error ? err.message : 'unknown error'}`)
     }
     setLoading(null)
   }
@@ -487,8 +475,9 @@ export default function TimesheetExportPanel() {
       const pdfBytes = await generatePDF(entries, range.start, range.end)
       const filename = `timesheet_${range.start}_${range.end}.pdf`
       downloadBlob(pdfBytes, filename, 'application/pdf')
-    } catch {
-      setError('Failed to generate PDF.')
+    } catch (err) {
+      console.error('PDF export failed:', err)
+      setError(`Failed to generate PDF: ${err instanceof Error ? err.message : 'unknown error'}`)
     }
     setLoading(null)
   }
