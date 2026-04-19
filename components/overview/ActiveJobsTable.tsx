@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { ArrowUpRight, Briefcase } from 'lucide-react'
-import Panel from '@/components/ui/Panel'
+import PanelLite from '@/components/ui/PanelLite'
 
 interface JobRow {
   id: string
@@ -13,9 +13,9 @@ interface JobRow {
 }
 
 const STATUS_TONE: Record<string, { dot: string; text: string; label: string }> = {
-  in_progress: { dot: 'bg-[oklch(0.75_0.18_145)] shadow-[0_0_6px_oklch(0.75_0.18_145)]', text: 'text-[oklch(0.75_0.18_145)]', label: 'IN PROGRESS' },
-  scheduled:   { dot: 'bg-[oklch(0.70_0.15_230)] shadow-[0_0_6px_oklch(0.70_0.15_230)]', text: 'text-[oklch(0.70_0.15_230)]', label: 'SCHEDULED' },
-  completed:   { dot: 'bg-slate-600',                                                     text: 'text-slate-500',              label: 'COMPLETED' },
+  in_progress: { dot: 'bg-emerald-400', text: 'text-emerald-400', label: 'In progress' },
+  scheduled:   { dot: 'bg-sky-400',     text: 'text-sky-400',     label: 'Scheduled' },
+  completed:   { dot: 'bg-slate-600',   text: 'text-slate-500',   label: 'Completed' },
 }
 
 export default function ActiveJobsTable() {
@@ -33,52 +33,49 @@ export default function ActiveJobsTable() {
   }, [])
 
   return (
-    <Panel
-      title="ACTIVE JOBS"
+    <PanelLite
+      title="Active jobs"
       status={jobs.length > 0 ? 'ok' : 'standby'}
-      right={<span>{jobs.length} TOTAL</span>}
+      right={<span>{jobs.length} total</span>}
       noPadding
     >
       {jobs.length === 0 ? (
-        <div className="py-12 text-center font-mono">
+        <div className="py-12 text-center">
           <Briefcase className="w-7 h-7 mx-auto mb-3 text-slate-700" />
-          <div className="text-[10px] tracking-[0.25em] text-slate-600">
-            {loaded ? 'NO ACTIVE JOBS' : 'LOADING...'}
-          </div>
+          <div className="text-sm text-slate-500">{loaded ? 'No active jobs' : 'Loading…'}</div>
         </div>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full font-mono">
+          <table className="w-full">
             <thead>
-              <tr className="border-b border-slate-700/60 bg-slate-900/30">
-                <th className="text-left px-4 py-2 text-[9px] tracking-[0.2em] text-slate-500">JOB</th>
-                <th className="text-left px-3 py-2 text-[9px] tracking-[0.2em] text-slate-500">CLIENT</th>
-                <th className="text-left px-3 py-2 text-[9px] tracking-[0.2em] text-slate-500 hidden md:table-cell">PROPERTY</th>
-                <th className="text-right px-4 py-2 text-[9px] tracking-[0.2em] text-slate-500">STATUS</th>
+              <tr className="border-b border-slate-800">
+                <th className="text-left px-4 py-2 text-xs font-medium text-slate-500">Job</th>
+                <th className="text-left px-3 py-2 text-xs font-medium text-slate-500">Client</th>
+                <th className="text-left px-3 py-2 text-xs font-medium text-slate-500 hidden md:table-cell">Property</th>
+                <th className="text-right px-4 py-2 text-xs font-medium text-slate-500">Status</th>
               </tr>
             </thead>
             <tbody>
-              {jobs.map((job, idx) => {
+              {jobs.map(job => {
                 const tone = STATUS_TONE[job.status] || STATUS_TONE.completed
                 return (
                   <tr
                     key={job.id}
-                    className="border-b border-slate-800/60 hover:bg-[oklch(0.78_0.17_75/0.04)] transition-colors group"
+                    className="border-b border-slate-800/60 last:border-0 hover:bg-slate-800/30 transition-colors group"
                   >
-                    <td className="px-4 py-2.5">
+                    <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
-                        <span className="text-[9px] text-slate-700">{String(idx + 1).padStart(2, '0')}</span>
-                        <span className="text-[12px] text-slate-200 group-hover:text-[oklch(0.78_0.17_75)] transition-colors uppercase tracking-wide">
+                        <span className="text-sm text-slate-100 group-hover:text-[oklch(0.78_0.17_75)] transition-colors">
                           {job.title}
                         </span>
-                        <ArrowUpRight className="w-3 h-3 text-slate-700 group-hover:text-[oklch(0.78_0.17_75)] transition-colors" />
+                        <ArrowUpRight className="w-3.5 h-3.5 text-slate-700 group-hover:text-[oklch(0.78_0.17_75)] transition-colors" />
                       </div>
                     </td>
-                    <td className="px-3 py-2.5"><span className="text-[11px] text-slate-400 uppercase tracking-wide">{job.client?.name || '—'}</span></td>
-                    <td className="px-3 py-2.5 hidden md:table-cell"><span className="text-[11px] text-slate-500 uppercase tracking-wide">{job.property?.name || '—'}</span></td>
-                    <td className="px-4 py-2.5 text-right">
-                      <span className={`inline-flex items-center gap-1.5 text-[10px] tracking-[0.15em] ${tone.text}`}>
-                        <span className={`w-1.5 h-1.5 ${tone.dot}`} />
+                    <td className="px-3 py-3"><span className="text-sm text-slate-400">{job.client?.name || '—'}</span></td>
+                    <td className="px-3 py-3 hidden md:table-cell"><span className="text-sm text-slate-500">{job.property?.name || '—'}</span></td>
+                    <td className="px-4 py-3 text-right">
+                      <span className={`inline-flex items-center gap-1.5 text-xs ${tone.text}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${tone.dot}`} />
                         {tone.label}
                       </span>
                     </td>
@@ -89,6 +86,6 @@ export default function ActiveJobsTable() {
           </table>
         </div>
       )}
-    </Panel>
+    </PanelLite>
   )
 }

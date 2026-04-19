@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import clsx from 'clsx'
-import Panel from '@/components/ui/Panel'
+import PanelLite from '@/components/ui/PanelLite'
 
 interface Block {
   id: string
@@ -36,7 +36,7 @@ export default function MiniCalendar() {
     return monthBlocks.filter(b => b.start_date <= dateStr && b.end_date >= dateStr)
   }
 
-  const monthLabel = new Date(month.year, month.month, 1).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }).toUpperCase()
+  const monthLabel = new Date(month.year, month.month, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
   const prev = () => month.month === 0 ? setMonth({ year: month.year - 1, month: 11 }) : setMonth({ ...month, month: month.month - 1 })
   const next = () => month.month === 11 ? setMonth({ year: month.year + 1, month: 0 }) : setMonth({ ...month, month: month.month + 1 })
 
@@ -44,19 +44,19 @@ export default function MiniCalendar() {
   while (cells.length % 7 !== 0) cells.push(null)
 
   return (
-    <Panel
+    <PanelLite
       title={monthLabel}
       right={
         <span className="flex gap-1">
-          <button onClick={prev} className="p-0.5 hover:text-[oklch(0.78_0.17_75)] transition-colors"><ChevronLeft className="w-3 h-3" /></button>
-          <button onClick={next} className="p-0.5 hover:text-[oklch(0.78_0.17_75)] transition-colors"><ChevronRight className="w-3 h-3" /></button>
+          <button onClick={prev} className="p-1 rounded hover:text-[oklch(0.78_0.17_75)] hover:bg-slate-800 transition-colors"><ChevronLeft className="w-3.5 h-3.5" /></button>
+          <button onClick={next} className="p-1 rounded hover:text-[oklch(0.78_0.17_75)] hover:bg-slate-800 transition-colors"><ChevronRight className="w-3.5 h-3.5" /></button>
         </span>
       }
     >
-      <div className="font-mono">
+      <div>
         <div className="grid grid-cols-7 mb-1">
           {['S','M','T','W','T','F','S'].map((d, i) => (
-            <div key={i} className="text-center text-[9px] tracking-[0.15em] text-slate-600 py-1">{d}</div>
+            <div key={i} className="text-center text-xs text-slate-500 py-1">{d}</div>
           ))}
         </div>
         <div className="grid grid-cols-7 gap-0.5">
@@ -71,28 +71,28 @@ export default function MiniCalendar() {
               <div
                 key={i}
                 className={clsx(
-                  'flex flex-col items-center py-1 border text-[10px] tabular-nums relative',
-                  isToday && 'border-[oklch(0.78_0.17_75)] bg-[oklch(0.78_0.17_75/0.12)] text-[oklch(0.78_0.17_75)] font-bold',
-                  !isToday && dayBlocks.length > 0 && 'border-slate-700/60 bg-slate-800/40 text-slate-300',
-                  !isToday && dayBlocks.length === 0 && 'border-transparent text-slate-500'
+                  'flex flex-col items-center py-1 rounded text-xs tabular-nums relative',
+                  isToday && 'bg-[oklch(0.78_0.17_75)]/15 text-[oklch(0.78_0.17_75)] font-semibold',
+                  !isToday && dayBlocks.length > 0 && 'bg-slate-800/60 text-slate-300',
+                  !isToday && dayBlocks.length === 0 && 'text-slate-500'
                 )}
               >
-                <span>{String(day).padStart(2, '0')}</span>
+                <span>{day}</span>
                 {(hasSBR || hasJob) && (
                   <div className="flex gap-0.5 mt-0.5">
-                    {hasJob && <div className="w-1 h-1 bg-[oklch(0.75_0.18_145)]" />}
-                    {hasSBR && <div className="w-1 h-1 bg-[oklch(0.78_0.17_75)]" />}
+                    {hasJob && <div className="w-1 h-1 rounded-full bg-emerald-400" />}
+                    {hasSBR && <div className="w-1 h-1 rounded-full bg-[oklch(0.78_0.17_75)]" />}
                   </div>
                 )}
               </div>
             )
           })}
         </div>
-        <div className="flex gap-3 mt-3 pt-3 border-t border-slate-700/60 text-[9px] tracking-[0.15em] text-slate-600">
-          <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 bg-[oklch(0.75_0.18_145)]" />JOB DAY</div>
-          <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 bg-[oklch(0.78_0.17_75)]" />BOOKING</div>
+        <div className="flex gap-3 mt-3 pt-3 border-t border-slate-800 text-xs text-slate-500">
+          <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />Job day</div>
+          <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-[oklch(0.78_0.17_75)]" />Booking</div>
         </div>
       </div>
-    </Panel>
+    </PanelLite>
   )
 }

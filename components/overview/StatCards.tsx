@@ -16,15 +16,9 @@ type Tone = 'amber' | 'green' | 'blue' | 'red'
 
 const TONE_TEXT: Record<Tone, string> = {
   amber: 'text-[oklch(0.78_0.17_75)]',
-  green: 'text-[oklch(0.75_0.18_145)]',
-  blue:  'text-[oklch(0.70_0.15_230)]',
-  red:   'text-[oklch(0.65_0.22_25)]',
-}
-const TONE_DOT: Record<Tone, string> = {
-  amber: 'bg-[oklch(0.78_0.17_75)] shadow-[0_0_8px_oklch(0.78_0.17_75)]',
-  green: 'bg-[oklch(0.75_0.18_145)] shadow-[0_0_8px_oklch(0.75_0.18_145)]',
-  blue:  'bg-[oklch(0.70_0.15_230)] shadow-[0_0_8px_oklch(0.70_0.15_230)]',
-  red:   'bg-[oklch(0.65_0.22_25)] shadow-[0_0_8px_oklch(0.65_0.22_25)]',
+  green: 'text-emerald-400',
+  blue:  'text-sky-400',
+  red:   'text-red-400',
 }
 
 export default function StatCards() {
@@ -37,7 +31,7 @@ export default function StatCards() {
       .catch(() => {})
   }, [])
 
-  const month = new Date().toLocaleString('en-US', { month: 'long', year: 'numeric' }).toUpperCase()
+  const month = new Date().toLocaleString('en-US', { month: 'short' })
 
   type Card = {
     label: string
@@ -51,49 +45,33 @@ export default function StatCards() {
   }
 
   const cards: Card[] = [
-    { label: 'ACTIVE JOBS',     icon: Briefcase,  tone: 'amber', sub: 'IN PROGRESS', value: stats?.activeJobs ?? 0 },
-    { label: 'HOURS THIS WEEK', icon: Clock,      tone: 'blue',  sub: 'MON–SUN',     value: stats?.hoursThisWeek ?? 0, decimals: 1, suffix: 'h' },
-    { label: 'BILLABLE MTD',    icon: DollarSign, tone: 'green', sub: month,         value: stats?.billableMTD ?? 0, prefix: '$' },
-    { label: 'OUTSTANDING',     icon: FileText,   tone: (stats?.invoicesOutstanding ?? 0) > 0 ? 'red' : 'amber', sub: 'UNPAID', value: stats?.invoicesOutstanding ?? 0, prefix: '$' },
+    { label: 'Active jobs',     icon: Briefcase,  tone: 'amber', sub: 'In progress',          value: stats?.activeJobs ?? 0 },
+    { label: 'Hours this week', icon: Clock,      tone: 'blue',  sub: 'Mon–Sun',              value: stats?.hoursThisWeek ?? 0, decimals: 1, suffix: 'h' },
+    { label: 'Billable MTD',    icon: DollarSign, tone: 'green', sub: month,                  value: stats?.billableMTD ?? 0, prefix: '$' },
+    { label: 'Outstanding',     icon: FileText,   tone: (stats?.invoicesOutstanding ?? 0) > 0 ? 'red' : 'amber', sub: 'Unpaid', value: stats?.invoicesOutstanding ?? 0, prefix: '$' },
   ]
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 boot-stagger">
-      {cards.map((card, idx) => {
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      {cards.map(card => {
         const Icon = card.icon
         return (
           <div
             key={card.label}
-            className="relative bg-[oklch(0.18_0.02_240/0.6)] border border-slate-700/60 backdrop-blur-sm p-4 hover:border-[oklch(0.78_0.17_75)]/60 hover:bg-[oklch(0.78_0.17_75/0.04)] transition-colors group"
-            style={{ animationDelay: `${idx * 60}ms` }}
+            className="rounded-lg border border-slate-800 bg-slate-900/50 p-4 hover:border-slate-700 transition-colors"
           >
-            <span className="absolute top-0 left-0 w-2 h-2 border-t border-l border-[oklch(0.78_0.17_75)]" />
-            <span className="absolute top-0 right-0 w-2 h-2 border-t border-r border-[oklch(0.78_0.17_75)]" />
-            <span className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-[oklch(0.78_0.17_75)]" />
-            <span className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-[oklch(0.78_0.17_75)]" />
-
-            <div className="flex items-center justify-between mb-3 font-mono">
-              <div className="flex items-center gap-2">
-                <span className={`w-1.5 h-1.5 ${TONE_DOT[card.tone]} tactical-pulse`} />
-                <span className="text-[9px] tracking-[0.2em] text-slate-500">{card.label}</span>
-              </div>
-              <Icon className={`w-3.5 h-3.5 ${TONE_TEXT[card.tone]} opacity-80`} />
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-slate-400">{card.label}</span>
+              <Icon className={`w-4 h-4 ${TONE_TEXT[card.tone]} opacity-70`} />
             </div>
-
-            <div className={`text-3xl font-mono font-bold tabular-nums ${TONE_TEXT[card.tone]}`}>
+            <div className={`text-3xl font-mono font-semibold tabular-nums ${TONE_TEXT[card.tone]}`}>
               {stats === null ? (
-                <span className="text-slate-700">— — —</span>
+                <span className="text-slate-700">—</span>
               ) : (
                 <CountUp value={card.value} decimals={card.decimals ?? 0} prefix={card.prefix} suffix={card.suffix} />
               )}
             </div>
-
-            <div className="flex items-center justify-end mt-2 font-mono">
-              <span className="text-[9px] tracking-[0.15em] text-slate-600">{card.sub}</span>
-            </div>
-
-            {/* sweep line on hover */}
-            <span className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-[oklch(0.78_0.17_75)] to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="mt-1 text-xs text-slate-500">{card.sub}</div>
           </div>
         )
       })}
