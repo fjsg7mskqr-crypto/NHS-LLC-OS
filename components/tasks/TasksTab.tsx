@@ -125,20 +125,28 @@ export default function TasksTab() {
           {filtered.map(task => {
             const isOverdue = !task.completed && task.due_date && task.due_date < new Date().toISOString().slice(0, 10)
             return (
-              <div key={task.id} className={`px-5 py-3.5 flex items-center gap-3 hover:bg-slate-800/40 transition-colors group ${task.completed ? 'opacity-50' : ''}`}>
+              <div
+                key={task.id}
+                role="button"
+                tabIndex={0}
+                onClick={() => setEditingTask(task)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    setEditingTask(task)
+                  }
+                }}
+                className={`px-5 py-3.5 flex items-center gap-3 hover:bg-slate-800/40 transition-colors group cursor-pointer ${task.completed ? 'opacity-50' : ''}`}
+              >
                 <button
-                  onClick={() => toggleComplete(task)}
+                  onClick={e => { e.stopPropagation(); toggleComplete(task) }}
                   disabled={updating}
+                  aria-label={task.completed ? 'Mark incomplete' : 'Mark complete'}
                   className="flex-shrink-0 text-slate-500 hover:text-emerald-400 transition-colors disabled:opacity-50"
                 >
                   {task.completed ? <CheckCircle className="w-5 h-5 text-emerald-500" /> : <Circle className="w-5 h-5" />}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setEditingTask(task)}
-                  className="flex-1 min-w-0 text-left cursor-pointer"
-                  aria-label={`Edit task: ${task.title}`}
-                >
+                <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className={`text-sm font-medium ${task.completed ? 'line-through text-slate-500' : 'text-slate-200 group-hover:text-emerald-300'} transition-colors`}>{task.title}</span>
                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium border ${priorityColor(task.priority)}`}>
@@ -154,15 +162,15 @@ export default function TasksTab() {
                       </span>
                     )}
                   </div>
-                </button>
+                </div>
                 <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                   {confirmDeleteId === task.id ? (
                     <div className="flex items-center gap-1">
-                      <button onClick={() => handleDelete(task.id)} disabled={updating} className="px-2 py-1 rounded text-xs bg-red-500/20 border border-red-500/30 text-red-400 hover:bg-red-500/30 disabled:opacity-50">Yes</button>
-                      <button onClick={() => setConfirmDeleteId(null)} className="px-2 py-1 rounded text-xs border border-slate-700 text-slate-400">No</button>
+                      <button onClick={e => { e.stopPropagation(); handleDelete(task.id) }} disabled={updating} className="px-2 py-1 rounded text-xs bg-red-500/20 border border-red-500/30 text-red-400 hover:bg-red-500/30 disabled:opacity-50">Yes</button>
+                      <button onClick={e => { e.stopPropagation(); setConfirmDeleteId(null) }} className="px-2 py-1 rounded text-xs border border-slate-700 text-slate-400">No</button>
                     </div>
                   ) : (
-                    <button onClick={() => setConfirmDeleteId(task.id)} className="p-1.5 rounded-lg hover:bg-slate-700 text-slate-500 hover:text-red-400 transition-colors">
+                    <button onClick={e => { e.stopPropagation(); setConfirmDeleteId(task.id) }} aria-label="Delete task" className="p-1.5 rounded-lg hover:bg-slate-700 text-slate-500 hover:text-red-400 transition-colors">
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   )}
