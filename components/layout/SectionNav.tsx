@@ -92,6 +92,7 @@ export default function SectionNav({ activeSection, onSectionChange }: SectionNa
             <div className="flex justify-between"><span>SUPABASE</span><span className="text-[oklch(0.75_0.18_145)]">●</span></div>
             <div className="flex justify-between"><span>SQUARE</span><span className="text-[oklch(0.75_0.18_145)]">●</span></div>
             <div className="flex justify-between"><span>DISCORD</span><span className="text-[oklch(0.78_0.17_75)]">●</span></div>
+            <div className="flex justify-between"><span>VERCEL</span><span className="text-[oklch(0.75_0.18_145)]">●</span></div>
           </div>
         </div>
       </aside>
