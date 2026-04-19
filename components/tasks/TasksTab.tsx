@@ -10,6 +10,7 @@ import type { Task, Priority } from '@/types'
 export default function TasksTab() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [showCreate, setShowCreate] = useState(false)
+  const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [listKey, setListKey] = useState(0)
@@ -132,9 +133,14 @@ export default function TasksTab() {
                 >
                   {task.completed ? <CheckCircle className="w-5 h-5 text-emerald-500" /> : <Circle className="w-5 h-5" />}
                 </button>
-                <div className="flex-1 min-w-0">
+                <button
+                  type="button"
+                  onClick={() => setEditingTask(task)}
+                  className="flex-1 min-w-0 text-left cursor-pointer"
+                  aria-label={`Edit task: ${task.title}`}
+                >
                   <div className="flex items-center gap-2">
-                    <span className={`text-sm font-medium ${task.completed ? 'line-through text-slate-500' : 'text-slate-200'}`}>{task.title}</span>
+                    <span className={`text-sm font-medium ${task.completed ? 'line-through text-slate-500' : 'text-slate-200 group-hover:text-emerald-300'} transition-colors`}>{task.title}</span>
                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium border ${priorityColor(task.priority)}`}>
                       {task.priority}
                     </span>
@@ -148,7 +154,7 @@ export default function TasksTab() {
                       </span>
                     )}
                   </div>
-                </div>
+                </button>
                 <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                   {confirmDeleteId === task.id ? (
                     <div className="flex items-center gap-1">
@@ -183,6 +189,14 @@ export default function TasksTab() {
         <CreateTaskModal
           onClose={() => setShowCreate(false)}
           onCreated={() => { setShowCreate(false); setListKey(k => k + 1) }}
+        />
+      )}
+
+      {editingTask && (
+        <CreateTaskModal
+          task={editingTask}
+          onClose={() => setEditingTask(null)}
+          onCreated={() => { setEditingTask(null); setListKey(k => k + 1) }}
         />
       )}
     </div>
