@@ -4,14 +4,12 @@ import { useState } from 'react'
 import SubTabs from '@/components/ui/SubTabs'
 import CalendarTab from '@/components/calendar/CalendarTab'
 import EquipmentTab from '@/components/equipment/EquipmentTab'
-import TasksTab from '@/components/tasks/TasksTab'
 import HelpTab from '@/components/help/HelpTab'
 import DiscordSetupCard from '@/components/admin/DiscordSetupCard'
 
 const TABS = [
   { id: 'calendar', label: 'Calendar' },
   { id: 'equipment', label: 'Equipment' },
-  { id: 'tasks', label: 'Tasks' },
   { id: 'help', label: 'Help' },
 ] as const
 
@@ -27,7 +25,6 @@ export default function MoreSection() {
       <div className="tab-content" key={active}>
         {active === 'calendar' && <CalendarTab />}
         {active === 'equipment' && <EquipmentTab />}
-        {active === 'tasks' && <TasksTab />}
         {active === 'help' && <HelpTab />}
       </div>
     </div>

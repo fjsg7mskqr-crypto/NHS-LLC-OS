@@ -3,11 +3,13 @@
 import { useState } from 'react'
 import SubTabs from '@/components/ui/SubTabs'
 import JobsTab from '@/components/jobs/JobsTab'
+import TasksTab from '@/components/tasks/TasksTab'
 import TimeTab from '@/components/time/TimeTab'
 import ClientsTab from '@/components/clients/ClientsTab'
 
 const TABS = [
   { id: 'jobs', label: 'Jobs' },
+  { id: 'tasks', label: 'Tasks' },
   { id: 'time', label: 'Time' },
   { id: 'clients', label: 'Clients' },
 ] as const
@@ -22,6 +24,7 @@ export default function WorkSection() {
       <SubTabs tabs={TABS} active={active} onChange={setActive} />
       <div className="tab-content" key={active}>
         {active === 'jobs' && <JobsTab />}
+        {active === 'tasks' && <TasksTab />}
         {active === 'time' && <TimeTab />}
         {active === 'clients' && <ClientsTab />}
       </div>
