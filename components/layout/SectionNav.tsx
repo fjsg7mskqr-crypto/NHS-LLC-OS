@@ -1,8 +1,24 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { Sun, Briefcase, DollarSign, Menu, Command as CommandIcon } from 'lucide-react'
 import clsx from 'clsx'
 import type { LucideIcon } from 'lucide-react'
+
+type HealthStatus = 'ok' | 'warn' | 'alert'
+type HealthCheck = { status: HealthStatus; detail: string }
+type HealthResponse = {
+  supabase: HealthCheck
+  square: HealthCheck
+  discord: HealthCheck
+  vercel: HealthCheck
+}
+
+const DOT_COLOR: Record<HealthStatus, string> = {
+  ok: 'text-[oklch(0.75_0.18_145)]',
+  warn: 'text-[oklch(0.78_0.17_75)]',
+  alert: 'text-red-400',
+}
 
 export const SECTIONS = [
   { id: 'today', label: 'Today', icon: Sun },
@@ -54,8 +70,42 @@ function RailButton({
 }
 
 export default function SectionNav({ activeSection, onSectionChange }: SectionNavProps) {
+  const [health, setHealth] = useState<HealthResponse | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    const load = async () => {
+      try {
+        const res = await fetch('/api/health', { cache: 'no-store' })
+        if (!res.ok) return
+        const data = (await res.json()) as HealthResponse
+        if (!cancelled) setHealth(data)
+      } catch {
+        // ignore — dot stays in standby
+      }
+    }
+    load()
+    const id = setInterval(load, 60_000)
+    return () => {
+      cancelled = true
+      clearInterval(id)
+    }
+  }, [])
+
   const triggerPalette = () => {
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }))
+  }
+
+  const renderRow = (label: string, key: keyof HealthResponse) => {
+    const check = health?.[key]
+    const color = check ? DOT_COLOR[check.status] : 'text-slate-700'
+    const title = check ? `${check.status.toUpperCase()} — ${check.detail}` : 'checking…'
+    return (
+      <div className="flex justify-between" title={title}>
+        <span>{label}</span>
+        <span className={color}>●</span>
+      </div>
+    )
   }
 
   return (
@@ -89,10 +139,10 @@ export default function SectionNav({ activeSection, onSectionChange }: SectionNa
             <span className="text-[9px] font-mono text-slate-600 group-hover:text-[oklch(0.78_0.17_75)]">⌘K</span>
           </button>
           <div className="text-[9px] tracking-[0.15em] text-slate-700 font-mono leading-relaxed">
-            <div className="flex justify-between"><span>SUPABASE</span><span className="text-[oklch(0.75_0.18_145)]">●</span></div>
-            <div className="flex justify-between"><span>SQUARE</span><span className="text-[oklch(0.75_0.18_145)]">●</span></div>
-            <div className="flex justify-between"><span>DISCORD</span><span className="text-[oklch(0.78_0.17_75)]">●</span></div>
-            <div className="flex justify-between"><span>VERCEL</span><span className="text-[oklch(0.75_0.18_145)]">●</span></div>
+            {renderRow('SUPABASE', 'supabase')}
+            {renderRow('SQUARE', 'square')}
+            {renderRow('DISCORD', 'discord')}
+            {renderRow('VERCEL', 'vercel')}
           </div>
         </div>
       </aside>
