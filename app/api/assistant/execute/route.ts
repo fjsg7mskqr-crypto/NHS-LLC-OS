@@ -1,4 +1,5 @@
 import type { NextRequest } from 'next/server'
+import { after } from 'next/server'
 import { createAssistantContext } from '@/lib/assistant/context'
 import { runAssistantAction } from '@/lib/assistant/actions'
 import type { AssistantActionName, AssistantActor } from '@/lib/assistant/types'
@@ -41,11 +42,17 @@ export async function POST(request: NextRequest) {
     )
 
     if (!action.readOnly) {
-      await logAssistantEvent(context.supabase, {
-        actor: context.actor,
-        actionName: action.name,
-        args: action.args,
-        result: action.result,
+      after(async () => {
+        try {
+          await logAssistantEvent(context.supabase, {
+            actor: context.actor,
+            actionName: action.name,
+            args: action.args,
+            result: action.result,
+          })
+        } catch (logErr) {
+          captureError(logErr, { route: '/api/assistant/execute', stage: 'audit-log' })
+        }
       })
     }
 

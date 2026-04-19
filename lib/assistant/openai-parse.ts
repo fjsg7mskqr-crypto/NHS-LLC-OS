@@ -261,7 +261,49 @@ function getOpenAIKey() {
 }
 
 function getOpenAIModel() {
-  return process.env.OPENAI_ASSISTANT_MODEL || 'gpt-5.4-mini'
+  return process.env.OPENAI_ASSISTANT_MODEL || 'gpt-5.4-nano'
+}
+
+type EntityContextCache = { value: string; expires: number }
+let entityContextCache: EntityContextCache | null = null
+const ENTITY_CONTEXT_TTL_MS = 5 * 60 * 1000
+
+async function loadEntityContext(
+  supabase: import('@supabase/supabase-js').SupabaseClient
+): Promise<string> {
+  const now = Date.now()
+  if (entityContextCache && entityContextCache.expires > now) {
+    return entityContextCache.value
+  }
+
+  try {
+    const [clients, jobs, properties] = await Promise.all([
+      supabase.from('clients').select('name').is('deleted_at', null).order('name').limit(50),
+      supabase.from('jobs').select('title, client:clients(name)').is('deleted_at', null).in('status', ['scheduled', 'in_progress', 'active']).order('title').limit(50),
+      supabase.from('properties').select('name, client:clients(name)').order('name').limit(50),
+    ])
+    const parts: string[] = []
+    if (clients.data?.length) {
+      parts.push(`Known clients: ${clients.data.map(c => c.name).join(', ')}.`)
+    }
+    if (jobs.data?.length) {
+      parts.push(`Active jobs: ${jobs.data.map(j => {
+        const client = j.client as unknown as { name: string } | null
+        return `${j.title}${client ? ` (${client.name})` : ''}`
+      }).join(', ')}.`)
+    }
+    if (properties.data?.length) {
+      parts.push(`Properties: ${properties.data.map(p => {
+        const client = p.client as unknown as { name: string } | null
+        return `${p.name}${client ? ` (${client.name})` : ''}`
+      }).join(', ')}.`)
+    }
+    const value = parts.join(' ')
+    entityContextCache = { value, expires: now + ENTITY_CONTEXT_TTL_MS }
+    return value
+  } catch {
+    return ''
+  }
 }
 
 /**
@@ -350,36 +392,8 @@ export async function chooseAssistantActionWithOpenAI(input: {
     new Date().toLocaleString('en-US', { timeZone: tz })
   ).toISOString().slice(0, 10)
 
-  // Fetch known entity names so OpenAI can recognize them
-  let entityContext = ''
-  if (input.supabase) {
-    try {
-      const [clients, jobs, properties] = await Promise.all([
-        input.supabase.from('clients').select('name').is('deleted_at', null).order('name').limit(50),
-        input.supabase.from('jobs').select('title, client:clients(name)').is('deleted_at', null).in('status', ['scheduled', 'in_progress', 'active']).order('title').limit(50),
-        input.supabase.from('properties').select('name, client:clients(name)').order('name').limit(50),
-      ])
-      const parts: string[] = []
-      if (clients.data?.length) {
-        parts.push(`Known clients: ${clients.data.map(c => c.name).join(', ')}.`)
-      }
-      if (jobs.data?.length) {
-        parts.push(`Active jobs: ${jobs.data.map(j => {
-          const client = j.client as unknown as { name: string } | null
-          return `${j.title}${client ? ` (${client.name})` : ''}`
-        }).join(', ')}.`)
-      }
-      if (properties.data?.length) {
-        parts.push(`Properties: ${properties.data.map(p => {
-          const client = p.client as unknown as { name: string } | null
-          return `${p.name}${client ? ` (${client.name})` : ''}`
-        }).join(', ')}.`)
-      }
-      if (parts.length) entityContext = parts.join(' ')
-    } catch {
-      // Non-fatal — proceed without entity context
-    }
-  }
+  // Fetch known entity names so OpenAI can recognize them (cached 5min in module scope)
+  const entityContext = input.supabase ? await loadEntityContext(input.supabase) : ''
 
   const openaiController = new AbortController()
   const openaiTimeout = setTimeout(() => openaiController.abort(), 30000)

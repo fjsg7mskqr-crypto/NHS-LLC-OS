@@ -1,4 +1,5 @@
 import type { NextRequest } from 'next/server'
+import { after } from 'next/server'
 import { createAssistantContext } from '@/lib/assistant/context'
 import { runAssistantAction } from '@/lib/assistant/actions'
 import { isAuthorizedAssistantServiceRequest } from '@/lib/assistant/service-auth'
@@ -64,11 +65,17 @@ export async function POST(request: NextRequest) {
         results.push({ name: action.name, args: action.args, result: action.result })
 
         if (!action.readOnly) {
-          await logAssistantEvent(context.supabase, {
-            actor,
-            actionName: action.name,
-            args: action.args,
-            result: action.result,
+          after(async () => {
+            try {
+              await logAssistantEvent(context.supabase, {
+                actor,
+                actionName: action.name,
+                args: action.args,
+                result: action.result,
+              })
+            } catch (logErr) {
+              captureError(logErr, { route: '/api/assistant/parse', stage: 'audit-log' })
+            }
           })
         }
       } catch (err) {

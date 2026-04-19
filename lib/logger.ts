@@ -1,11 +1,10 @@
+import * as Sentry from '@sentry/nextjs'
+
 /**
  * Structured error logger for API routes.
  *
- * Vercel captures console output in its log drain. This produces
- * JSON-structured log lines so they're filterable in the Vercel dashboard.
- *
- * To upgrade to Sentry later, replace the body of `captureError` with
- * Sentry.captureException() and add Sentry.init() in instrumentation.ts.
+ * Errors and warnings are sent to Sentry and also emitted as structured
+ * console lines so they remain easy to inspect in Vercel logs.
  */
 
 type LogContext = {
@@ -25,6 +24,10 @@ export function captureError(error: unknown, context?: LogContext) {
     ...context,
   }
 
+  Sentry.captureException(error, {
+    extra: context,
+  })
+
   // Structured JSON line — Vercel log drain picks this up
   console.error(JSON.stringify(entry))
 }
@@ -36,6 +39,11 @@ export function captureWarning(message: string, context?: LogContext) {
     message,
     ...context,
   }
+
+  Sentry.captureMessage(message, {
+    level: 'warning',
+    extra: context,
+  })
 
   console.warn(JSON.stringify(entry))
 }
