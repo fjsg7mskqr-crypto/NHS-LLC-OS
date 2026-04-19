@@ -4,7 +4,7 @@ import { listOpenTasks } from './tasks'
 import { getSchedule } from './calendar'
 
 export async function getStatsSnapshot(supabase: SupabaseClient) {
-  const [hours, billable, jobsRes, invoicesRes] = await Promise.all([
+  const [hours, billable, jobsRes, invoicesRes, squareInvoicesRes] = await Promise.all([
     getHoursSummary(supabase, { period: 'week' }),
     getBillableSummary(supabase, { period: 'month' }),
     supabase
@@ -16,6 +16,10 @@ export async function getStatsSnapshot(supabase: SupabaseClient) {
       .select('total')
       .is('deleted_at', null)
       .in('status', ['sent', 'overdue']),
+    supabase
+      .from('square_invoices')
+      .select('amount_due')
+      .in('status', ['unpaid', 'overdue', 'partially_paid']),
   ])
 
   if (jobsRes.error) {
@@ -24,11 +28,19 @@ export async function getStatsSnapshot(supabase: SupabaseClient) {
   if (invoicesRes.error) {
     throw new Error(invoicesRes.error.message)
   }
+  if (squareInvoicesRes.error) {
+    throw new Error(squareInvoicesRes.error.message)
+  }
 
-  const invoicesOutstanding = (invoicesRes.data || []).reduce(
-    (sum, invoice) => sum + (invoice.total || 0),
+  const manualOutstanding = (invoicesRes.data || []).reduce(
+    (sum, invoice) => sum + Number(invoice.total || 0),
     0
   )
+  const squareOutstanding = (squareInvoicesRes.data || []).reduce(
+    (sum, invoice) => sum + Number(invoice.amount_due || 0),
+    0
+  )
+  const invoicesOutstanding = manualOutstanding + squareOutstanding
 
   return {
     activeJobs: jobsRes.count ?? 0,
