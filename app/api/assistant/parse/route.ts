@@ -3,7 +3,7 @@ import { after } from 'next/server'
 import { createAssistantContext } from '@/lib/assistant/context'
 import { runAssistantAction } from '@/lib/assistant/actions'
 import { isAuthorizedAssistantServiceRequest } from '@/lib/assistant/service-auth'
-import { chooseAssistantActionWithOpenAI } from '@/lib/assistant/openai-parse'
+import { chooseAssistantActionWithOpenAI, synthesizeChatReply } from '@/lib/assistant/openai-parse'
 import { logAssistantEvent } from '@/lib/domain/audit'
 import type { AssistantActor, AssistantResponse } from '@/lib/assistant/types'
 import { captureError } from '@/lib/logger'
@@ -57,12 +57,16 @@ export async function POST(request: NextRequest) {
 
     const replies: string[] = []
     const results: Array<{ name: string; args: Record<string, unknown>; result: unknown }> = []
+    let allReadOnly = true
+    let anySucceeded = false
 
     for (const item of actionList) {
       try {
         const action = await runAssistantAction(context, item.name, item.args)
         replies.push(action.reply)
         results.push({ name: action.name, args: action.args, result: action.result })
+        anySucceeded = true
+        if (!action.readOnly) allReadOnly = false
 
         if (!action.readOnly) {
           after(async () => {
@@ -80,11 +84,28 @@ export async function POST(request: NextRequest) {
         }
       } catch (err) {
         replies.push(`Failed: ${err instanceof Error ? err.message : 'Unknown error'}`)
+        allReadOnly = false
+      }
+    }
+
+    // Chat-mode path: if every action succeeded and was read-only, synthesize
+    // a conversational answer from the results instead of dumping the raw reply.
+    let finalReply = replies.join('\n')
+    if (anySucceeded && allReadOnly && results.length > 0) {
+      try {
+        finalReply = await synthesizeChatReply({
+          userMessage: body.message,
+          toolResults: results.map(r => ({ name: r.name, result: r.result })),
+          timezone: context.timezone,
+        })
+      } catch (synthErr) {
+        captureError(synthErr, { route: '/api/assistant/parse', stage: 'synthesize' })
+        // fall back to joined raw replies
       }
     }
 
     return Response.json({
-      reply: replies.join('\n'),
+      reply: finalReply,
       action: results[0] ? {
         name: results[0].name as AssistantResponse['action'] extends { name: infer N } ? N : never,
         args: results[0].args,
