@@ -152,6 +152,91 @@ client.on(Events.InteractionCreate, async interaction => {
   }
 })
 
+// Daily morning brief — fetches today's plan from the Next.js API and
+// posts it to the channel at a configured hour in the configured timezone.
+// Defaults to 7:00 America/Detroit. No external cron dep; we compute the
+// ms until next fire, setTimeout, then re-schedule after each fire.
+const BRIEF_HOUR = Number(process.env.DAILY_BRIEF_HOUR ?? 7)
+const BRIEF_MINUTE = Number(process.env.DAILY_BRIEF_MINUTE ?? 0)
+const BRIEF_TZ = process.env.DAILY_BRIEF_TZ || 'America/Detroit'
+
+function msUntilNextBriefTime() {
+  const now = new Date()
+  const localParts = new Intl.DateTimeFormat('en-US', {
+    timeZone: BRIEF_TZ,
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+    hour12: false,
+  }).formatToParts(now)
+  const get = type => Number(localParts.find(p => p.type === type)?.value || 0)
+  const localY = get('year')
+  const localM = get('month')
+  const localD = get('day')
+  const localH = get('hour') === 24 ? 0 : get('hour')
+  const localMin = get('minute')
+
+  // Find today's fire time in the configured tz. If it has already passed,
+  // roll to tomorrow.
+  const nowLocalMinutes = localH * 60 + localMin
+  const targetMinutes = BRIEF_HOUR * 60 + BRIEF_MINUTE
+  let dayOffset = 0
+  if (nowLocalMinutes >= targetMinutes) dayOffset = 1
+
+  // Build a Date representing target-local-time by constructing an ISO in the
+  // user's tz and converting to UTC via known offset.
+  const offsetStr = (() => {
+    const fmt = new Intl.DateTimeFormat('en-US', {
+      timeZone: BRIEF_TZ,
+      timeZoneName: 'shortOffset',
+    })
+    const tzName = fmt.formatToParts(now).find(p => p.type === 'timeZoneName')?.value || 'GMT+0'
+    const m = tzName.match(/GMT([+-])(\d{1,2})(?::(\d{2}))?/)
+    if (!m) return '+00:00'
+    return `${m[1]}${m[2].padStart(2, '0')}:${(m[3] || '00').padStart(2, '0')}`
+  })()
+
+  const targetY = localY
+  const targetM = localM
+  const targetD = localD + dayOffset
+  const iso = `${targetY}-${String(targetM).padStart(2, '0')}-${String(targetD).padStart(2, '0')}T${String(BRIEF_HOUR).padStart(2, '0')}:${String(BRIEF_MINUTE).padStart(2, '0')}:00${offsetStr}`
+  const target = new Date(iso)
+  return Math.max(1000, target.getTime() - now.getTime())
+}
+
+async function postMorningBrief() {
+  try {
+    const res = await fetch(`${process.env.ASSISTANT_BASE_URL}/api/assistant/morning-brief`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${process.env.ASSISTANT_SERVICE_TOKEN}`,
+      },
+    })
+    const payload = await res.json()
+    if (!res.ok) throw new Error(payload?.error || 'brief failed')
+    const channel = await client.channels.fetch(process.env.DISCORD_CHANNEL_ID)
+    if (channel && channel.isTextBased?.() && channel.send) {
+      await channel.send(payload.message || 'Morning brief had no content.')
+    }
+  } catch (err) {
+    console.error('Morning brief error:', err?.message || err)
+  }
+}
+
+function scheduleNextBrief() {
+  const delay = msUntilNextBriefTime()
+  const nextFire = new Date(Date.now() + delay).toLocaleString('en-US', { timeZone: BRIEF_TZ })
+  console.log(`Next morning brief scheduled for ${nextFire} (${BRIEF_TZ}) in ${Math.round(delay / 60000)} min`)
+  setTimeout(async () => {
+    await postMorningBrief()
+    scheduleNextBrief()
+  }, delay)
+}
+
+client.once(Events.ClientReady, () => {
+  scheduleNextBrief()
+})
+
 // Railway healthcheck keepalive — bind $PORT so the container is not killed
 // for failing to listen on a port. The bot itself is a Discord gateway worker
 // and has no HTTP surface, but Railway's default healthcheck expects one.
